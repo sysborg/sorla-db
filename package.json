@@ -1,0 +1,41 @@
+{
+  "name": "sorladb",
+  "version": "1.0.0",
+  "description": "A simple and temporary database focused to use in browser environment that will bring capabilities for other tools that will be launched as soon as possible.",
+  "main": "index.js",
+  "scripts": {
+    "mini": "node index.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sysborg/sorla-db.git"
+  },
+  "keywords": [
+    "nosql",
+    "browser",
+    "database",
+    "sorla",
+    "sysborg",
+    "anderson",
+    "arruda",
+    "andmarruda"
+  ],
+  "author": "Anderson Arruda < andmarruda@gmail.com >",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sysborg/sorla-db/issues"
+  },
+  "homepage": "https://github.com/sysborg/sorla-db#readme",
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "chai": "^4.3.8",
+    "faker": "^6.6.6",
+    "fs-extra": "^11.1.1",
+    "jest": "^29.6.4",
+    "jsdom": "^22.1.0",
+    "jsdom-global": "^3.0.2",
+    "mocha": "^10.2.0",
+    "uglify-es": "^3.3.9"
+  }
+}
