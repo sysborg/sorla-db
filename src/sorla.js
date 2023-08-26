@@ -23,7 +23,7 @@ class sorla{
     **/
     _findDbIndex(name)
     {
-        return this._dbs.findIndex(db => db.name === name);
+        return this._dbs.findIndex(db => db.name == name);
     }
 
     /**
@@ -51,7 +51,7 @@ class sorla{
         {
             throw new Error('Database does not exists');
         }
-        this._selectedDb = this._db[pos];
+        this._selectedDb = this._dbs[pos];
     }
 
     /**
@@ -65,12 +65,11 @@ class sorla{
     {
         if(this._dbExists(name))
         {
-            throw new Error('Database already exists');
+            return false;
         }
 
         let pos = this._dbs.length;
-        this._dbs.push({'name': new database()});
-
+        this._dbs.push(new database(name));
         return pos;
     }
 
@@ -102,6 +101,18 @@ class sorla{
     countDb()
     {
         return this._dbs.length;
+    }
+
+    /**
+     * Return selected db
+     * @author Anderson Arruda < anderson@sysborg.com.br >
+     * @version 1.0.0
+     * @param 
+     * @return instanceof database
+    **/
+    get db()
+    {
+        return this._selectedDb;
     }
 }
 
