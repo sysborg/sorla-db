@@ -10,9 +10,9 @@ node index.js
 
 To test the environment using jest run...
 Don`t forget to install the dev dependecies before, using:
+
 ```
 npm install --only=dev
-
 ```
 
 ```
