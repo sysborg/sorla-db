@@ -33,7 +33,7 @@ class sorla{
      * @param  string name
      * @return boolean
      */
-    _dbExists(name)
+    dbExists(name)
     {
         return this._findDbIndex(name) > -1;
     }
@@ -63,7 +63,7 @@ class sorla{
     **/
     createDb(name)
     {
-        if(this._dbExists(name))
+        if(this.dbExists(name))
         {
             return false;
         }
@@ -83,7 +83,7 @@ class sorla{
     useDb(name)
     {
         let pos = null;
-        if(!this._dbExists(name))
+        if(!this.dbExists(name))
         {
             pos = this.createDb(name);
         }
