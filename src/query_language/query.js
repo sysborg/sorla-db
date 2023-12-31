@@ -1,16 +1,26 @@
-class query
+const manipulation = require('./manipulation.js');
+
+class query extends manipulation
 {
-    /**
-     * constructs class query with the given parameters
-     * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
-     * @param object json
-     * @return void
-    **/
-    constructor(json)
+    constructor(validationSchema)
     {
-        this._json = json;
+        super(validationSchema);
     }
+
+    /**
+     * Count documents
+     * @return int
+     */
+    count()
+    {
+        return this._documents.length;
+    }
+
+    //find
+    //find one
+    //find one and delete
+    //find one and update
+    //find one and replace
 }
 
 module.exports =  query;

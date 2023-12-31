@@ -54,6 +54,8 @@ class database
 
         this._collections[name] = new collection(validationSchema);
         this._collectionCount++;
+
+        //creates _id as a index unique
     }
 
     /**

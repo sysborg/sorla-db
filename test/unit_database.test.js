@@ -4,7 +4,7 @@ const faker = require('faker')
 const sorla = require('../src/sorla.js')
 const collection = require('../src/collections/collection.js');
 
-describe('SORLA Database Unit Text', () => {
+describe('SORLA Database Unit Test', () => {
     beforeAll(() => {
         this.srla = new sorla();
         this.dbname = faker.random.word();

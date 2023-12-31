@@ -1,8 +1,17 @@
 class documents
 {
-    constructor()
+    constructor(object)
     {
-        this._data = [];
+        this._data = object;
+    }
+
+    /**
+     * Returns the id of the document
+     * @return string
+     */
+    get _id()
+    {
+        return this._data._id;
     }
 }
 
