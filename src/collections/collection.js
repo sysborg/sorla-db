@@ -6,13 +6,11 @@ class collection
      * Constructs class Collection to manage documents
      * @author Anderson Arruda < anderson@sysborg.com.br >
      * @version 1.0.0
-     * @param string name
-     * @param object | function | null validationSchema
+     * @param object validationSchema - in construction
      * @return void
     **/
-    constructor(name, validationSchema)
+    constructor(validationSchema)
     {
-        this._name = name;
         this._documents = [];
         this.validationSchema = validationSchema;
     }
@@ -26,7 +24,10 @@ class collection
     **/
     set validationSchema(validationSchema)
     {
-        if(schemaValidation !== null && ['object', 'function'].indexOf(typeof schemaValidation) == -1)
+        if(typeof schemaValidation === 'undefined' || schemaValidation === null)
+            return;
+
+        if(['object', 'function'].indexOf(typeof schemaValidation) == -1)
         {
             throw new Error('Invalid schema validation');
         }

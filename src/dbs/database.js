@@ -1,5 +1,4 @@
 const collection = require('../collections/collection.js');
-const query = require('../query_language/query.js');
 
 class database
 {
@@ -12,10 +11,20 @@ class database
     **/
     constructor(name)
     {
-        this._collections = [];
+        this._collections = {};
         this._name = name;
-        this._selectedCollection = null;
-        this._schemaValidation = null;
+        this._collectionCount = 0;
+
+        return new Proxy(this, {
+            get: (target, prop, receiver) => {
+                if(prop in target._collections)
+                {
+                    return target._collections[prop];
+                }
+
+                return target[prop];
+            }
+        });
     }
 
     /**
@@ -31,44 +40,30 @@ class database
     }
 
     /**
-     * Get selected collection
-     * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
-     * @param 
-     * @return instanceof collection
-    **/
-    get collection()
-    {
-        return this._selectedCollection;
-    }
-
-    /**
-     * Search a collection`s position in the list of collections by its name and mark it as selected
-     * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
+     * Sets a new collection in the database
      * @param string name
+     * @param object validationSchema - in construction
      * @return void
-    **/
-    _findCollectionIndex(name)
+     */
+    createCollection(name, validationSchema)
     {
-        return this._collections.findIndex(collection => collection.name == name);
-    }
-    
-    /**
-     * Creates or select a collection that doesn`t exists
-     * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
-     * @param  string name
-     * @param  Object | function | null schemaValidation
-     * @return void
-    **/
-    useCollection(name, schemaValidation=null)
-    {
-        this._schemaValidation = schemaValidation;
-        let pos = this._collections.length;
-        this._collections.push(new collection(name, schemaValidation));
+        if(this._collections.hasOwnProperty(name) || typeof this[name] !== 'undefined')
+        {
+            throw new Error('Collection already exists');
+        }
 
-        this._selectCollection(pos);
+        this._collections[name] = new collection(validationSchema);
+        this._collectionCount++;
+    }
+
+    /**
+     * Returns the number of collections in the database
+     * @param
+     * @return int
+     */
+    countCollections()
+    {
+        return this._collectionCount;
     }
 }
 
