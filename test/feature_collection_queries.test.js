@@ -3,6 +3,15 @@ const expect = chai.expect
 const faker = require('faker')
 const sorla = require('../src/sorla.js')
 
+const searchItem = (array) => {
+    const itemIndex1 = Math.floor(Math.random() * this.objects.length);
+    do {
+        const itemIndex2 = Math.floor(Math.random() * this.objects.length);
+    } while(itemIndex1 === itemIndex2);
+
+    return [itemIndex1, itemIndex2];
+};
+
 describe('SORLA Collection Queries Feature Test', () => {
     beforeAll(() => {
         this.srla = new sorla();
@@ -29,28 +38,22 @@ describe('SORLA Collection Queries Feature Test', () => {
     });
 
     it('Creates a few documents and search for one of them', () => {
-        const itemIndex = Math.floor(Math.randon() * this.objects.length);
+        const [itemIndex1,] = searchItem(this.objects);
     });
 
     it('Creates a few documents and search for some of them', () => {
-        const itemIndex1 = Math.floor(Math.randon() * this.objects.length);
-        do {
-            const itemIndex2 = Math.floor(Math.randon() * this.objects.length);
-        } while(itemIndex1 === itemIndex2);
+        const [itemIndex1, itemIndex2] = searchItem(this.objects);
     });
 
     it('Creates a few documents and search using or', () => {
-        const itemIndex1 = Math.floor(Math.randon() * this.objects.length);
-        do {
-            const itemIndex2 = Math.floor(Math.randon() * this.objects.length);
-        } while(itemIndex1 === itemIndex2);
+        const [itemIndex1, itemIndex2] = searchItem(this.objects);
     });
 
     it('Creates a few documents and search using lt', () => {
-        const itemIndex = Math.floor(Math.randon() * this.objects.length);
+        const [itemIndex1,] = searchItem(this.objects);
     });
 
     it('Creates a few documents and search using gt', () => {
-        const itemIndex = Math.floor(Math.randon() * this.objects.length);
+        const [itemIndex1,] = searchItem(this.objects);
     });
 });
