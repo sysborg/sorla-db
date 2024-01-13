@@ -17,22 +17,78 @@ class query extends manipulation
     }
 
     /**
+     * Deeps find in object
+     * @param object query
+     * @param bool firstOne
+     * @return array
+     */
+    _deepFind(query, firstOne = false)
+    {
+        const result = [];
+
+        const find = (object) => {
+            Object.keys(object).forEach(key => {
+                if(typeof object[key] === 'object')
+                {
+                    find(object[key]);
+                }
+                else
+                {
+                    if(object[key] === query[key])
+                    {
+                        result.push(object);
+                        if(firstOne)
+                            return object;
+                    }
+                }
+            });
+        };
+
+        find(this._documents);
+
+        return result;
+    }
+
+    /**
+     * Projection documents only fields
+     * @param array | object documents
+     * @param object fields
+     * @return array
+     */
+    _projection(documents, fields)
+    {
+        const isObject = typeof documents === 'object';
+        documents = Array.isArray(documents) ? documents : [documents];
+        for(let field in fields)
+        {
+            documents.forEach(doc => {
+                if(fields[field] === 0)
+                    delete doc[field];
+            });
+        }
+
+        return isObject ? documents[0] : documents;
+    }
+
+    /**
      * Find one document
-     * @param object
+     * @param query
+     * @param projection
      * @return object
      */
-    findOne(object)
+    findOne(query, projection = null)
     {
-        if(Object.keys(object).length === 0)
-            return this._documents[0];
+        const document = Object.keys(query).length === 0 ? this._documents[0]._data : this._deepFind(query, true);
+        return typeof projection === 'object' ? this._projection(document, projection) : document;
     }
 
     /**
      * Find documents
-     * @param object
+     * @param query
+     * @param projection
      * @return array
      */
-    findMany(object)
+    find(query, projection = null)
     {
 
     }
