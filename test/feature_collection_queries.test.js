@@ -5,8 +5,9 @@ const sorla = require('../src/sorla.js')
 
 const searchItem = (array) => {
     const itemIndex1 = Math.floor(Math.random() * this.objects.length);
+    let itemIndex2 = null;
     do {
-        const itemIndex2 = Math.floor(Math.random() * this.objects.length);
+        itemIndex2 = Math.floor(Math.random() * this.objects.length);
     } while(itemIndex1 === itemIndex2);
 
     return [itemIndex1, itemIndex2];
@@ -30,7 +31,8 @@ describe('SORLA Collection Queries Feature Test', () => {
             const obj = {
                 name: faker.random.word(),
                 email: faker.internet.email(),
-                age: faker.random.number()
+                age: faker.datatype.number(),
+                uuid: faker.datatype.uuid()
             };
             this.objects.push(obj);
             this.srla.db[this.collectionName].insertOne(obj);
@@ -43,15 +45,31 @@ describe('SORLA Collection Queries Feature Test', () => {
         expect(firstDoc).to.deep.equal(firstObj);
     });
 
-    /*it('Takes the data from the document inside the collection', () => {
-        console.log(JSON.stringify(this.srla.db[this.collectionName].findOne({})));
-    });*/
-
-    /*it('Creates a few documents and search for one of them', () => {
-        const [itemIndex1,] = searchItem(this.objects);
+    it('Takes the data field name from the document inside the collection', () => {
+        const firstDoc = this.srla.db[this.collectionName].findOne({}, { _id: 0 });
+        const firstObj = this.objects[0];
+        expect(firstDoc.name).to.be.a('string').equal(firstObj.name);
     });
 
-    it('Creates a few documents and search for some of them', () => {
+    it('Takes the data field email from the document inside the collection', () => {
+        const firstDoc = this.srla.db[this.collectionName].findOne({}, { _id: 0 });
+        const firstObj = this.objects[0];
+        expect(firstDoc.email).to.be.a('string').equal(firstObj.email);
+    });
+
+    it('Takes the data field age from the document inside the collection', () => {
+        const firstDoc = this.srla.db[this.collectionName].findOne({}, { _id: 0 });
+        const firstObj = this.objects[0];
+        expect(firstDoc.age).to.be.a('number').equal(firstObj.age);
+    });
+
+    it('Creates a few documents and search for one of them', () => {
+        const [itemIndex1,] = searchItem(this.objects);
+        const doc = this.srla.db[this.collectionName].findOne({ uuid: this.objects[itemIndex1].uuid }, { _id: 0 });
+        expect(doc).to.deep.equal(this.objects[itemIndex1]);
+    });
+
+    /*it('Creates a few documents and search for some of them', () => {
         const [itemIndex1, itemIndex2] = searchItem(this.objects);
     });
 
