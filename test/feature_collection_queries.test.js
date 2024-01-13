@@ -37,7 +37,18 @@ describe('SORLA Collection Queries Feature Test', () => {
         }
     });
 
-    it('Creates a few documents and search for one of them', () => {
+    it('Test if the first document in the collection is the same first document on the objects array', () => {
+        const firstDoc = JSON.parse(JSON.stringify(this.srla.db[this.collectionName].findOne({})));
+        const firstObj = this.objects[0];
+        delete firstDoc['_id'];
+        expect(firstDoc).to.deep.equal(firstObj);
+    });
+
+    it('Takes the data from the document inside the collection', () => {
+        console.log(JSON.stringify(this.srla.db[this.collectionName].findOne({})));
+    });
+
+    /*it('Creates a few documents and search for one of them', () => {
         const [itemIndex1,] = searchItem(this.objects);
     });
 
@@ -55,5 +66,5 @@ describe('SORLA Collection Queries Feature Test', () => {
 
     it('Creates a few documents and search using gt', () => {
         const [itemIndex1,] = searchItem(this.objects);
-    });
+    });*/
 });

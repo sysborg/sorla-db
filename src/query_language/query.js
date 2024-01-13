@@ -23,7 +23,8 @@ class query extends manipulation
      */
     findOne(object)
     {
-        
+        if(Object.keys(object).length === 0)
+            return this._documents[0];
     }
 
     /**

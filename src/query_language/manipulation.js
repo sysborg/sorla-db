@@ -77,8 +77,9 @@ class manipulation {
 
         if(typeof document._id === 'undefined')
         {
+            let _idKey = '';
             do {
-                const _idKey = this._generateKey();
+                _idKey = this._generateKey();
             } while(this._documents.find(doc => doc._id === document._id));
 
             document._id = _idKey;
