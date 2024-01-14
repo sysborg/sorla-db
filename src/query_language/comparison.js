@@ -1,56 +1,68 @@
 class comparison {
     /**
      * less than
-     * @param $queries
+     * @param object document
+     * @param string field
+     * @param mixed value
      * @return array
      */
-    lessThan($queries) {
-        return { $lt: $queries };
+    lessThan(document, field, value) {
+        return document[field] < value;
     }
 
     /**
      * less than or equal
-     * @param $queries
+     * @param object document
+     * @param string field
+     * @param mixed value
      * @return array
      */
-    lessThanOrEqual($queries) {
-        return { $lte: $queries };
+    lessThanOrEqual(document, field, value) {
+        return document[field] <= value;
     }
 
     /**
      * greater than
-     * @param $queries
+     * @param object document
+     * @param string field
+     * @param mixed value
      * @return array
      */
-    greaterThan($queries) {
-        return { $gt: $queries };
+    greaterThan(document, field, value) {
+        return document[field] > value;
     }
 
     /**
      * greater than or equal
-     * @param $queries
+     * @param object document
+     * @param string field
+     * @param mixed value
      * @return array
      */
-    greaterThanOrEqual($queries) {
-        return { $gte: $queries };
+    greaterThanOrEqual(document, field, value) {
+        return document[field] >= value;
     }
 
     /**
      * equal
-     * @param $queries
+     * @param object document
+     * @param string field
+     * @param mixed value
      * @return array
      */
-    equal($queries) {
-        return { $eq: $queries };
+    equal(document, field, value) {
+        return document[field] == value;
     }
 
     /**
      * not equal
-     * @param $queries
+     * @param object document
+     * @param string field
+     * @param mixed value
      * @return array
      */
-    notEqual($queries) {
-        return { $ne: $queries };
+    notEqual(document, field, value) {
+        return document[field] != value;
     }
 
     get $lt() {
