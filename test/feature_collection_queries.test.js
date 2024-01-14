@@ -69,11 +69,17 @@ describe('SORLA Collection Queries Feature Test', () => {
         expect(doc).to.deep.equal(this.objects[itemIndex1]);
     });
 
-    /*it('Creates a few documents and search for some of them', () => {
+    it('Creates a few documents and search for some of them', () => {
         const [itemIndex1, itemIndex2] = searchItem(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            $or: [
+                { uuid: this.objects[itemIndex1].uuid },
+                { uuid: this.objects[itemIndex2].uuid }
+            ]
+        });
     });
 
-    it('Creates a few documents and search using or', () => {
+    /*it('Creates a few documents and search using or', () => {
         const [itemIndex1, itemIndex2] = searchItem(this.objects);
     });
 
