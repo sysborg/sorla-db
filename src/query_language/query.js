@@ -1,10 +1,14 @@
 const manipulation = require('./manipulation.js');
+const operators = require('./operators.js');
+const comparison = require('./comparison.js');
 
 class query extends manipulation
 {
     constructor(validationSchema)
     {
         super(validationSchema);
+        this._operators = new operators();
+        this._comparison = new comparison();
     }
 
     /**
