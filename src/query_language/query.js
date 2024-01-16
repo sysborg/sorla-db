@@ -1,6 +1,5 @@
 const manipulation = require('./manipulation.js');
 const operators = require('./operators.js');
-const comparison = require('./comparison.js');
 
 class query extends manipulation
 {
@@ -8,7 +7,6 @@ class query extends manipulation
     {
         super(validationSchema);
         this._operators = new operators();
-        this._comparison = new comparison();
     }
 
     /**
@@ -32,6 +30,11 @@ class query extends manipulation
 
         const find = (object) => {
             Object.keys(object).forEach(key => {
+                if(key in this._operators)
+                {
+
+                }
+                
                 if(typeof object[key] === 'object')
                 {
                     find(object[key]);
