@@ -1,14 +1,5 @@
 class operators {
     /**
-     * Or operator
-     * @param array queries
-     * @return array
-     */
-    operatorOr(queries) {
-        //return { $or: queries };
-    }
-
-    /**
      * And operator
      * @param array queries
      * @return array
@@ -26,8 +17,23 @@ class operators {
         //return { $not: queries };
     }
 
+    /**
+     * Or operator
+     * @param array queries
+     * @return array
+     */
     get $or() {
-        return this.operatorOr;
+        return (queries, documents) => {
+            if(!Array.isArray(queries))
+                throw new Error('The $or operator must be an array');
+
+            let result = false;
+            queries.forEach(query => {
+
+            });
+
+            return result;
+        };
     }
 
     get $and() {
@@ -129,4 +135,4 @@ class operators {
     }
 }
 
-module.exports = operator;
+module.exports = operators;
