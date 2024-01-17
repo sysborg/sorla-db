@@ -1,5 +1,14 @@
 class operators {
     /**
+     * Is operators
+     * @param string operator
+     * @return boolean
+     */
+    isOperator(operator) {
+        return ['$or', '$and', '$lt', '$lte', '$gt', '$gte', '$eq', '$ne'].indexOf(operator) > -1;
+    }
+
+    /**
      * And operator
      * @param array queries
      * @return array

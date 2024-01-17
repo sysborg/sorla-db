@@ -35,7 +35,15 @@ describe('SORLA Collection Feature Test', () => {
     });
 
     it('create a document with prohibited character .', () => {
-        expect(() => this.srla.db[this.collectionName].insertOne({name: 'Anderson', test: {test: '123'}})).to.throw();
+        expect(() => this.srla.db[this.collectionName].insertOne({"name.name": 'Anderson', test: {test: '123'}})).to.throw();
+    });
+
+    it('create a document with prohibited character . inside of an array', () => {
+        expect(() => this.srla.db[this.collectionName].insertOne({name: 'Anderson', test: [{"test.number": '123'}, {"test.number": '123'}]})).to.throw();
+    });
+
+    it('create a document with prohibited character . inside of an object', () => {
+        expect(() => this.srla.db[this.collectionName].insertOne({name: 'Anderson', test: {"test.number": '123'}})).to.throw();
     });
 
     /*it('Try to create a document without beeing a valid object', () => {

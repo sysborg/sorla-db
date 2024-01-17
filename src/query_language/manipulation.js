@@ -1,8 +1,11 @@
 const documents = require('../documents/document.js');
+const operatorsCheck = require('./operators.js');
 
 class manipulation {
     constructor(validationSchema = null) {
         this.validationSchema = validationSchema;
+        this._index = {};
+        this._prohibitedCharacters = ['$', '.'];
     }
 
     /**
@@ -63,6 +66,40 @@ class manipulation {
     }
 
     /**
+     * Verify if keys has prohibited characters
+     * @param object document
+     * @return boolean
+     */
+    _validateKeys(document)
+    {
+        const keys = Object.keys(document);
+        const operators = new operatorsCheck();
+        for(let key of keys)
+        {
+            const hasProhibitedCharacters = this._prohibitedCharacters.reduce((acc, char) => {
+                return key.indexOf(char) > -1 ? ++acc : acc;
+            }, 0);
+
+            if(hasProhibitedCharacters > 0 && !operators.isOperator(key))
+                return false;
+
+            if(typeof document[key] === 'object')
+                return this._validateKeys(document[key]);
+
+            if(Array.isArray(document[key]))
+            {
+                for(let value of document[key])
+                {
+                    if(typeof value === 'object')
+                        return this._validateKeys(value);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Inserts one document to the collection
      * @author Anderson Arruda < anderson@sysborg.com.br >
      * @version 1.0.0
@@ -74,6 +111,9 @@ class manipulation {
     {
         if(typeof document !== 'object' || Array.isArray(document))
             throw new Error('Invalid document type');
+
+        if(!this._validateKeys(document))
+            throw new Error('Invalid document keys');
 
         if(typeof document._id === 'undefined')
         {
