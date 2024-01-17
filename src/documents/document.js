@@ -12,6 +12,16 @@ class documents
                 }
 
                 return target[prop];
+            },
+            
+            set: (target, prop, value) => {
+                console.log(prop, value, target);
+                /*if(prop in target._data)
+                {
+                    target._data[prop] = value;
+                }
+
+                return true;*/
             }
         });
     }

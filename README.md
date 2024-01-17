@@ -20,3 +20,6 @@ npm test
 ```
 
 Soon some documentations....
+
+Prohibited characters $ and .,
+$ because is used to call operators and . because uses to search key inside a object's object

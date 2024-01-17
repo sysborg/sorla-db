@@ -30,6 +30,14 @@ describe('SORLA Collection Feature Test', () => {
         expect(this.srla.db[this.collectionName].count()).to.equal(3);
     });
 
+    it('create a document with prohibited character $', () => {
+        expect(() => this.srla.db[this.collectionName].insertOne({name: 'Anderson', $test: '123'})).to.throw();
+    });
+
+    it('create a document with prohibited character .', () => {
+        expect(() => this.srla.db[this.collectionName].insertOne({name: 'Anderson', test: {test: '123'}})).to.throw();
+    });
+
     /*it('Try to create a document without beeing a valid object', () => {
         expect(() => this.srla.db[this.collectionName].insertOne('Anderson')).to.throw();
     });
