@@ -1,4 +1,4 @@
-- Prohibted $ and . on inser and updates
+- Prohibted $ and . on updates
 - Create a get that gets data from documents representing something like {teste: {testar: '123'}} that can be get using
   teste.testar using the get environment from proxy.
 - Simplify the operators environment

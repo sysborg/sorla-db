@@ -46,6 +46,15 @@ describe('SORLA Collection Feature Test', () => {
         expect(() => this.srla.db[this.collectionName].insertOne({name: 'Anderson', test: {"test.number": '123'}})).to.throw();
     });
 
+    it('get a document by his subfield using test.inscription', () => {
+        this.srla.db[this.collectionName].insertMany([
+            {name: 'Anderson', test: {inscription: 123}},
+            {name: 'Arruda', test: {inscription: 321}},
+            {name: 'Sorla', test: {inscription: 213}}
+        ]);
+        expect(this.srla.db[this.collectionName].find({'test.inscription': 123}).length).to.equal(1);
+    });
+
     /*it('Try to create a document without beeing a valid object', () => {
         expect(() => this.srla.db[this.collectionName].insertOne('Anderson')).to.throw();
     });
