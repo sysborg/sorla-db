@@ -17,6 +17,25 @@ class utils
             return v.toString(16);
         });
     }
+
+    /**
+     * Get data using dots to access subfields
+     * @param object data
+     * @param string field
+     */
+    getDotData(data, field)
+    {
+        let fields = field.split('.');
+
+        fields.forEach(field => {
+            if(typeof data[field] !== 'undefined')
+            {
+                data = data[field];
+            }
+        });
+
+        return data;
+    }
 }
 
 module.exports = utils;
