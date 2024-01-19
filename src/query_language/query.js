@@ -32,14 +32,14 @@ class query extends manipulation
             Object.keys(object).forEach(key => {
                 if(key in this._operators)
                 {
-
+                    if(this._operators[key](object[key], query[key]))
+                        result.push(object);
                 }
                 
                 if(typeof object[key] === 'object')
                 {
                     find(object[key]);
-                }
-                else
+                } else
                 {
                     if(object[key] === query[key])
                     {

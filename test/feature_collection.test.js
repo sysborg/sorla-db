@@ -52,8 +52,7 @@ describe('SORLA Collection Feature Test', () => {
             {name: 'Arruda', test: {inscription: 321}},
             {name: 'Sorla', test: {inscription: 213}}
         ]);
-        console.error(this.srla.db[this.collectionName].find({'test.inscription': 123}));
-        expect(this.srla.db[this.collectionName].find({'test.inscription': 123}).length).to.equal(1);
+        expect(this.srla.db[this.collectionName].findOne({'test.inscription': 123}).length).to.equal(1);
     });
 
     /*it('Try to create a document without beeing a valid object', () => {
