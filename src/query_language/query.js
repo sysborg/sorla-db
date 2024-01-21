@@ -5,6 +5,7 @@ class query extends manipulation
 {
     constructor(validationSchema)
     {
+        console.log('manipulation', manipulation);
         super(validationSchema);
         this._operators = new operators();
     }

@@ -5,3 +5,5 @@
 - Preparing new deep search using all capabilities
 - Preparing sort of data using new capabilities
 - Need to improve dot getting value when using find
+
+Fixing for browser user porpouse
