@@ -21,9 +21,8 @@ function findJsFiles(dir, fileList = []) {
 }
 
 function simpleMinify(code) {
-    return code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
-                .replace(/\s*([{};=,:()])\s*/g, '$1')
-                .replace(/\s+/g, ' ');
+    const codeWithoutComment = code.replace(/\/\*\*[\s\S]*?\*\//g, '');
+    return codeWithoutComment.split('\n').map(line => line.trim()).join('');
 }
 
 function buildForBrowser(entryFile, outputFile) {
