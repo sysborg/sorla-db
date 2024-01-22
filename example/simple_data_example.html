@@ -6,7 +6,48 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-        <p><b>Total Items:</b> <span id="total-items"></span></p>
+        <p><b>Total Items:</b> <span id="total-items"></span></p><hr>
+
+        <h3>Add you data:</h3>
+        <div>
+            <label>Name</label>
+            <input type="text" id="name" placeholder="Name">
+        </div>
+        <div>
+            <label>Inscription</label>
+            <input type="number" step="1" min="1" id="inscription" placeholder="Inscription">
+        </div>
+        <div>
+            <label>Age</label>
+            <input type="number" step="1" min="1" id="age" placeholder="Age">
+        </div>
+        <div>
+            <label>Father</label>
+            <input type="text" id="father" placeholder="Father">
+        </div>
+        <div>
+            <label>Mother</label>
+            <input type="text" id="mother" placeholder="Mother">
+        </div>
+        <hr>
+
+        <h3>Seach data</h3>
+        <div>
+            <label>Search by name</label>
+            <input type="text" id="search-name" placeholder="Search by name">
+            <select id="search-name-type">
+                <option value="name">Name</option>
+                <option value="inscription">Inscription</option>
+                <option value="age">Age</option>
+                <option value="parents.father">Father</option>
+                <option value="parents.mother">Mother</option>
+            </select>
+            <button type="button" id="search-name-btn">Search</button>
+        </div>
+
+        <div>
+            <textarea id="search-result" cols="30" rows="10"></textarea>
+        </div>
 
         <script src="../dist/sorla.min.js"></script>
         <script>
