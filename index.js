@@ -22,7 +22,7 @@ function findJsFiles(dir, fileList = []) {
 
 function simpleMinify(code) {
     const codeWithoutComment = code.replace(/\/\*\*[\s\S]*?\*\//g, '');
-    return codeWithoutComment.split('\n').map(line => line.trim()).join('');
+    return codeWithoutComment;
 }
 
 function buildForBrowser(entryFile, outputFile) {
@@ -33,6 +33,7 @@ function buildForBrowser(entryFile, outputFile) {
             console.error(err);
             return;
         }
+
         const minified = simpleMinify(buf.toString());
         fs.outputFileSync(outputFile, minified);
     });

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "mini": "node index.js",
+    "build": "webpack",
     "test": "jest"
   },
   "repository": {
@@ -28,7 +29,6 @@
   },
   "homepage": "https://github.com/sysborg/sorla-db#readme",
   "devDependencies": {
-    "browserify": "^17.0.0",
     "chai": "^4.3.8",
     "faker": "^5.5.3",
     "fs-extra": "^11.1.1",
@@ -36,6 +36,7 @@
     "jsdom": "^22.1.0",
     "jsdom-global": "^3.0.2",
     "mocha": "^10.2.0",
-    "uglify-es": "^3.3.9"
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   }
 }
