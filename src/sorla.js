@@ -117,3 +117,7 @@ class sorla{
 }
 
 module.exports = sorla;
+if(typeof window !== 'undefined')
+{
+    window.sorla = sorla;
+}

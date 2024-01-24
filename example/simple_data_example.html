@@ -29,6 +29,7 @@
             <label>Mother</label>
             <input type="text" id="mother" placeholder="Mother">
         </div>
+        <button type="button" id="add-data">Add data</button>
         <hr>
 
         <h3>Seach data</h3>
@@ -51,16 +52,33 @@
 
         <script src="../dist/sorla.min.js"></script>
         <script>
+            addItem = () => {
+                const name = document.getElementById('name').value;
+                const inscription = document.getElementById('inscription').value;
+                const age = document.getElementById('age').value;
+                const father = document.getElementById('father').value;
+                const mother = document.getElementById('mother').value;
+
+                s.db.simple.insertOne({
+                    'name': name,
+                    'inscription': inscription,
+                    'age': age,
+                    'parents': {
+                        'father': father,
+                        'mother': mother
+                    }
+                });
+
+                document.getElementById('total-items').innerText = s.db.simple.count();
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
-                console.log(sorla);
-                const s = new sorla();
+                window.s = new sorla();
                 s.useDb('simple_database');
                 s.db.createCollection('simple');
 
-                console.log(Object.keys(s.db.simple));
-
                 //creating data
-                s.db.simple.inserMany([
+                s.db.simple.insertMany([
                     {
                         'name': 'John Doe',
                         'inscription': 123,
@@ -124,6 +142,7 @@
                 ]);
 
                 document.getElementById('total-items').innerText = s.db.simple.count();
+                document.getElementById('add-data').addEventListener('click', addItem);
             });
         </script>
     </body>
