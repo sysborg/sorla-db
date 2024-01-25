@@ -30,25 +30,29 @@ class query extends manipulation
         const result = [];
 
         const find = (object) => {
-            Object.keys(object).forEach(key => {
+            Object.keys(query).forEach(key => {
+                console.log(key, query[key], object[key]);
                 if(key in this._operators)
                 {
                     if(this._operators[key](object[key], query[key]))
                         result.push(object);
+                } else {
+
                 }
                 
-                if(typeof object[key] === 'object')
+                /*if(typeof object[key] === 'object')
                 {
                     find(object[key]);
                 } else
                 {
+                    console.log('object[key]', object[key], query[key]);
                     if(object[key] === query[key])
                     {
                         result.push(object);
                         if(firstOne)
                             return object;
                     }
-                }
+                }*/
             });
         };
 
@@ -98,7 +102,8 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-
+        const documents = Object.keys(query).length === 0 ? this._documents : this._deepFind(query);
+        return typeof projection === 'object' ? this._projection(documents, projection) : documents;
     }
 
     //find

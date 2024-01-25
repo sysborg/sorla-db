@@ -34,8 +34,8 @@
 
         <h3>Seach data</h3>
         <div>
-            <label>Search by name</label>
-            <input type="text" id="search-name" placeholder="Search by name">
+            <label>Search by</label>
+            <input type="text" id="search-name" placeholder="Search by">
             <select id="search-name-type">
                 <option value="name">Name</option>
                 <option value="inscription">Inscription</option>
@@ -43,7 +43,7 @@
                 <option value="parents.father">Father</option>
                 <option value="parents.mother">Mother</option>
             </select>
-            <button type="button" id="search-name-btn">Search</button>
+            <button type="button" id="search-by-btn">Search</button>
         </div>
 
         <div>
@@ -70,6 +70,19 @@
                 });
 
                 document.getElementById('total-items').innerText = s.db.simple.count();
+            }
+
+            searchData = () => {
+                const searchName = document.getElementById('search-name').value;
+                const searchNameType = document.getElementById('search-name-type').value;
+
+                const result = s.db.simple.findOne({
+                    [searchNameType]: searchName
+                });
+
+                console.log(result);
+
+                document.getElementById('search-result').value = JSON.stringify(result, null, 4);
             }
 
             document.addEventListener('DOMContentLoaded', () => {
@@ -143,6 +156,7 @@
 
                 document.getElementById('total-items').innerText = s.db.simple.count();
                 document.getElementById('add-data').addEventListener('click', addItem);
+                document.getElementById('search-by-btn').addEventListener('click', searchData);
             });
         </script>
     </body>
