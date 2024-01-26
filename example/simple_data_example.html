@@ -157,6 +157,10 @@
                 document.getElementById('total-items').innerText = s.db.simple.count();
                 document.getElementById('add-data').addEventListener('click', addItem);
                 document.getElementById('search-by-btn').addEventListener('click', searchData);
+
+                //testing search and
+                const result = s.db.simple.find({'$and': [{'name': 'John Doe'}, {'age': 25}]}); //should return 1
+                console.log(result);
             });
         </script>
     </body>

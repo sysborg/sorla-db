@@ -5,7 +5,6 @@ class query extends manipulation
 {
     constructor(validationSchema)
     {
-        console.log('manipulation', manipulation);
         super(validationSchema);
         this._operators = new operators();
     }
@@ -25,17 +24,17 @@ class query extends manipulation
      * @param bool firstOne
      * @return array
      */
-    _deepFind(query, firstOne = false)
+    _deepFind(query, documents, firstOne = false)
     {
-        const result = [];
+        let result = [];
 
         const find = (object) => {
             Object.keys(query).forEach(key => {
-                console.log(key, query[key], object[key]);
                 if(key in this._operators)
                 {
-                    if(this._operators[key](object[key], query[key]))
-                        result.push(object);
+                    const operator_result = this._operators[key](query[key], documents);
+                    if(operator_result.length > 0)
+                        result = [...result, ...operator_result];
                 } else {
 
                 }
@@ -58,7 +57,7 @@ class query extends manipulation
 
         find(this._documents);
 
-        return result;
+        return firstOne ? result[0] : result;
     }
 
     /**
@@ -90,7 +89,7 @@ class query extends manipulation
      */
     findOne(query, projection = null)
     {
-        const document = Object.keys(query).length === 0 ? this._documents[0]._data : this._deepFind(query, true);
+        const document = Object.keys(query).length === 0 ? this._documents[0]._data : this._deepFind(query, this._documents, true);
         return typeof projection === 'object' ? this._projection(document, projection) : document;
     }
 
@@ -102,7 +101,7 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = Object.keys(query).length === 0 ? this._documents : this._deepFind(query);
+        const documents = Object.keys(query).length === 0 ? JSON.parse(JSON.stringify(this._documents)) : this._deepFind(query, this._documents);
         return typeof projection === 'object' ? this._projection(documents, projection) : documents;
     }
 

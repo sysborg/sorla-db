@@ -9,15 +9,6 @@ class operators {
     }
 
     /**
-     * And operator
-     * @param array queries
-     * @return array
-     */
-    operatorAnd(queries) {
-        //return { $and: queries };
-    }
-
-    /**
      * Not operator
      * @param array queries
      * @return array
@@ -45,8 +36,48 @@ class operators {
         };
     }
 
+    /**
+     * And operator
+     * @param array queries
+     * @return array
+     */
     get $and() {
-        return this.operatorAnd;
+        return (queries, documents) => {
+            if(!Array.isArray(queries))
+                throw new Error('The $and operator must be an array');
+
+            let result = [];
+            let comparison = true;
+            for(const doc of documents) {
+                queries.forEach(query => {
+                    Object.keys(query).forEach(attr => {
+                        if(this.isOperator(attr)){
+
+                        } else if(typeof documents[attr] === 'object') {
+
+                        } else if(Array.isArray(documents[attr])) {
+
+                        } else {
+                            if(doc[attr] !== query[attr])
+                            {
+                                comparison = false;
+                                return;
+                            }
+                        }
+                    });
+
+                    if(!comparison)
+                        return;
+                });
+
+                if(comparison)
+                    result.push(JSON.parse(JSON.stringify(doc._data)));
+
+                comparison = true;
+            }
+
+            return result;
+        };
     }
 
     get $not() {
