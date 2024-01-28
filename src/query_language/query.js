@@ -29,6 +29,23 @@ class query extends manipulation
         let result = [];
 
         const find = (object) => {
+            let finded = [];
+            docsLoop: for(let doc of this._documents)
+            {
+                for(let key of Object.keys(query))
+                {
+                    if(this._operators.isLogicalOperator(key) && !this._operators[key](query[key], doc))
+                            continue docsLoop;
+                    else {
+                        
+                    }
+                }
+
+
+
+                console.log(doc);
+            }
+
             Object.keys(query).forEach(key => {
                 if(key in this._operators)
                 {

@@ -1,11 +1,20 @@
 class operators {
     /**
+     * check if is logical operator
+     * @param string operator
+     * @return boolean
+     */
+    isLogicalOperator(operator) {
+        return ['$or', '$and', '$not', '$nor'].indexOf(operator) > -1;
+    }
+
+    /**
      * Is operators
      * @param string operator
      * @return boolean
      */
     isOperator(operator) {
-        return ['$or', '$and', '$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'].indexOf(operator) > -1;
+        return ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'].indexOf(operator) > -1;
     }
 
     /**
