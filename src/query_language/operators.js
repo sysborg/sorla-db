@@ -47,33 +47,23 @@ class operators {
                 throw new Error('The $and operator must be an array');
 
             let result = [];
-            let comparison = true;
-            for(const doc of documents) {
-                queries.forEach(query => {
-                    Object.keys(query).forEach(attr => {
-                        if(this.isOperator(attr)){
+            docLoop: for(const doc of documents) {
+                    for(const query of queries) {
+                        for(const attr of Object.keys(query)) {
+                            if(this.isOperator(attr)){
 
-                        } else if(typeof documents[attr] === 'object') {
+                            } else if(typeof documents[attr] === 'object') {
+    
+                            } else if(Array.isArray(documents[attr])) {
+    
+                            } else if(doc[attr] !== query[attr])
+                                continue docLoop;
 
-                        } else if(Array.isArray(documents[attr])) {
-
-                        } else {
-                            if(doc[attr] !== query[attr])
-                            {
-                                comparison = false;
-                                return;
-                            }
+                            continue docLoop;
                         }
-                    });
+                    }
 
-                    if(!comparison)
-                        return;
-                });
-
-                if(comparison)
-                    result.push(JSON.parse(JSON.stringify(doc._data)));
-
-                comparison = true;
+                result.push(JSON.parse(JSON.stringify(doc._data)));
             }
 
             return result;
