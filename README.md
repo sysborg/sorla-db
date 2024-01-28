@@ -23,3 +23,9 @@ Soon some documentations....
 
 Prohibited characters $ and .,
 $ because is used to call operators and . because uses to search key inside a object's object
+
+## Find Operators
+
+### $and
+
+The $and operator meticulously processes arrays, employing a loop chain mechanism. During this process, it's engineered for efficiency: if it encounters any comparison that yields false, it immediately halts the ongoing chain. This intelligent design is aimed at preventing unnecessary computation time, especially when dealing with documents that don't meet the specified condition. It's all about optimizing performance and ensuring swift, precise operations.
