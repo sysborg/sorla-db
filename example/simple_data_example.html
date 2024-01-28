@@ -158,9 +158,14 @@
                 document.getElementById('add-data').addEventListener('click', addItem);
                 document.getElementById('search-by-btn').addEventListener('click', searchData);
 
+                //operators test
                 //testing search and
                 const result = s.db.simple.find({'$and': [{'name': 'John Doe'}, {'age': 25}]}); //should return 1
-                console.log(result);
+                console.log('and', result);
+
+                //testing search or
+                const result2 = s.db.simple.find({'$or': [{'name': 'John Doe'}, {'parents.mother': 'Elizabeth Johnson'}]}); //should return 2
+                console.log('or', result2);
             });
         </script>
     </body>

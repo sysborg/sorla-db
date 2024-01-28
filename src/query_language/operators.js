@@ -27,10 +27,24 @@ class operators {
             if(!Array.isArray(queries))
                 throw new Error('The $or operator must be an array');
 
-            let result = false;
-            queries.forEach(query => {
+            let result = [];
+            docLoop: for(const doc of documents) {
+                for(const query of queries) {
+                    for(const attr of Object.keys(query)) {
+                        if(this.isOperator(attr)){
 
-            });
+                        } else if(typeof documents[attr] === 'object') {
+
+                        } else if(Array.isArray(documents[attr])) {
+
+                        } else if(doc[attr] === query[attr])
+                        {
+                            result.push(structuredClone(doc._data));
+                            continue docLoop;
+                        }
+                    }
+                }
+            }
 
             return result;
         };
@@ -58,12 +72,9 @@ class operators {
     
                             } else if(doc[attr] !== query[attr])
                                 continue docLoop;
-
-                            continue docLoop;
                         }
                     }
-
-                result.push(JSON.parse(JSON.stringify(doc._data)));
+                result.push(structuredClone(doc._data));
             }
 
             return result;

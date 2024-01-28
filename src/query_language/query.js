@@ -24,7 +24,7 @@ class query extends manipulation
      * @param bool firstOne
      * @return array
      */
-    _deepFind(query, documents, firstOne = false)
+    _deepFind(query, documents, single=false)
     {
         let result = [];
 
@@ -33,8 +33,7 @@ class query extends manipulation
                 if(key in this._operators)
                 {
                     const operator_result = this._operators[key](query[key], documents);
-                    if(operator_result.length > 0)
-                        result = [...result, ...operator_result];
+                    result = [...result, ...operator_result];
                 } else {
 
                 }
@@ -56,8 +55,7 @@ class query extends manipulation
         };
 
         find(this._documents);
-
-        return firstOne ? result[0] : result;
+        return single ? result[0] : result;
     }
 
     /**
@@ -68,7 +66,9 @@ class query extends manipulation
      */
     _projection(documents, fields)
     {
-        const isObject = typeof documents === 'object';
+        if(fields === null) return documents;
+
+        const isObject = !Array.isArray(documents) && typeof documents === 'object';
         documents = Array.isArray(documents) ? documents : [documents];
         for(let field in fields)
         {
@@ -89,8 +89,8 @@ class query extends manipulation
      */
     findOne(query, projection = null)
     {
-        const document = Object.keys(query).length === 0 ? this._documents[0]._data : this._deepFind(query, this._documents, true);
-        return typeof projection === 'object' ? this._projection(document, projection) : document;
+        const document = Object.keys(query).length === 0 ? structuredClone(this._documents[0]._data) : this._deepFind(query, this._documents, true);
+        return this._projection(document, projection);
     }
 
     /**
@@ -101,8 +101,8 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = Object.keys(query).length === 0 ? JSON.parse(JSON.stringify(this._documents)) : this._deepFind(query, this._documents);
-        return typeof projection === 'object' ? this._projection(documents, projection) : documents;
+        const documents = Object.keys(query).length === 0 ? structuredClone(this._documents) : this._deepFind(query, this._documents);
+        return this._projection(documents, projection);
     }
 
     //find
