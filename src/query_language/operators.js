@@ -5,16 +5,7 @@ class operators {
      * @return boolean
      */
     isOperator(operator) {
-        return ['$or', '$and', '$lt', '$lte', '$gt', '$gte', '$eq', '$ne'].indexOf(operator) > -1;
-    }
-
-    /**
-     * Not operator
-     * @param array queries
-     * @return array
-     */
-    operatorNot(queries) {
-        //return { $not: queries };
+        return ['$or', '$and', '$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'].indexOf(operator) > -1;
     }
 
     /**
@@ -140,17 +131,6 @@ class operators {
         return document[field] == value;
     }
 
-    /**
-     * not equal
-     * @param object document
-     * @param string field
-     * @param mixed value
-     * @return array
-     */
-    notEqual(document, field, value) {
-        return document[field] != value;
-    }
-
     get $lt() {
         return this.lessThan;
     }
@@ -171,6 +151,11 @@ class operators {
         return this.equal;
     }
 
+    /**
+     * Not operator
+     * @param array queries
+     * @return array
+     */
     get $ne() {
         return this.notEqual;
     }
