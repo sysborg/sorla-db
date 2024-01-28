@@ -35,15 +35,16 @@ class query extends manipulation
                 for(let key of Object.keys(query))
                 {
                     if(this._operators.isLogicalOperator(key) && !this._operators[key](query[key], doc))
-                            continue docsLoop;
-                    else {
-                        
+                    {
+                        continue docsLoop;
+                    } else {
+
                     }
                 }
 
 
-
-                console.log(doc);
+                finded.push(0);
+                result.push(structuredClone(doc._data));
             }
 
             Object.keys(query).forEach(key => {
