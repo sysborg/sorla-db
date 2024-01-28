@@ -37,8 +37,11 @@ class query extends manipulation
                     if(this._operators.isLogicalOperator(key) && !this._operators[key](query[key], doc))
                     {
                         continue docsLoop;
-                    } else {
+                    }
 
+                    if(typeof doc[key] !== 'undefined')
+                    {
+                        
                     }
                 }
 
@@ -70,6 +73,8 @@ class query extends manipulation
                     }
                 }*/
             });
+
+            return finded.length > 0;
         };
 
         find(this._documents);
