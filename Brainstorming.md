@@ -1,3 +1,5 @@
+For the first query version needs only to see if has some non logical operator or non logical comparison to resend to find as a recursive method.
+
 - Prohibted $ and . on updates
 - Create a get that gets data from documents representing something like {teste: {testar: '123'}} that can be get using
   teste.testar using the get environment from proxy.

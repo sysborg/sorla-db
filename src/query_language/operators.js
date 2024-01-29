@@ -20,28 +20,27 @@ class operators {
     /**
      * Or operator
      * @param array queries
+     * @param object doc
      * @return array
      */
     get $or() {
-        return (queries, documents) => {
+        return (queries, doc) => {
             if(!Array.isArray(queries))
                 throw new Error('The $or operator must be an array');
 
-            let result = [];
-            docLoop: for(const doc of documents) {
-                for(const query of queries) {
-                    for(const attr of Object.keys(query)) {
-                        if(this.isOperator(attr)){
+            let result = false;
+            queryLoop: for(const query of queries) {
+                for(const attr of Object.keys(query)) {
+                    if(this.isLogicalOperator(attr) && this[attr](query[attr], doc))
+                    {
+                        result = true;
+                        continue queryLoop;
+                    }
 
-                        } else if(typeof documents[attr] === 'object') {
-
-                        } else if(Array.isArray(documents[attr])) {
-
-                        } else if(doc[attr] === query[attr])
-                        {
-                            result.push(structuredClone(doc._data));
-                            continue docLoop;
-                        }
+                    if(this.handleComparison(attr, query[attr], doc))
+                    {
+                        result = true;
+                        continue queryLoop;
                     }
                 }
             }
@@ -53,40 +52,64 @@ class operators {
     /**
      * And operator
      * @param array queries
+     * @param object doc
      * @return array
      */
     get $and() {
-        return (queries, documents) => {
+        return (queries, doc) => {
             if(!Array.isArray(queries))
                 throw new Error('The $and operator must be an array');
 
-            let result = [];
-            docLoop: for(const doc of documents) {
-                    for(const query of queries) {
-                        for(const attr of Object.keys(query)) {
-                            if(this.isOperator(attr)){
-
-                            } else if(typeof documents[attr] === 'object') {
-    
-                            } else if(Array.isArray(documents[attr])) {
-    
-                            } else if(doc[attr] !== query[attr])
-                                continue docLoop;
-                        }
+            let result = true;
+            queryLoop: for(const query of queries) {
+                for(const attr of Object.keys(query)) {
+                    if(this.isLogicalOperator(attr) && !this[attr](query[attr], doc))
+                    {
+                        result = false;
+                        continue queryLoop;
                     }
-                result.push(structuredClone(doc._data));
+
+                    if(!this.handleComparison(attr, query[attr], doc))
+                    {
+                        result = false;
+                        continue queryLoop;
+                    }
+                }
             }
 
             return result;
         };
     }
 
+    /**
+     * Not operator
+     * @param array queries
+     * @param object doc
+     * @return array
+     */
     get $not() {
-        return this.operatorNot;
+        const self = this;
+        return (queries, doc) => {
+            if(!Array.isArray(queries))
+                throw new Error('The $not operator must be an array');
+
+            return !self.$and(queries, doc);
+        };
     }
 
+    /**
+     * Nor operator
+     * @param array queries
+     * @param object doc
+     * @return array
+     */
     get $nor() {
-        return this.operatorNor;
+        return (queries, doc) => {
+            if(!Array.isArray(queries))
+                throw new Error('The $nor operator must be an array');
+
+            return !this.$or(queries, doc);
+        };
     }
 
     /**
@@ -97,7 +120,10 @@ class operators {
      */
     get $nin() {
         return (doc_value, queries) => {
-            return Array.isArray(queries) ? queries.indexOf(doc_value) === -1 : false;
+            if(!Array.isArray(queries))
+                throw new Error('The $nin operator must be an array');
+
+            return !this.$in(doc_value, queries);
         }
     }
 
@@ -109,7 +135,19 @@ class operators {
      */
     get $in() {
         return (doc_value, queries) => {
-            return Array.isArray(queries) ? queries.indexOf(doc_value) > -1 : false;
+            if(!Array.isArray(queries))
+                throw new Error('The $in operator must be an array');
+
+            if(Array.isArray(doc_value))
+            {
+                for(const value of queries)
+                {
+                    if(doc_value.indexOf(value) > -1)
+                        return true;
+                }
+            }
+
+            return  queries.indexOf(doc_value) > -1;
         }
     }
 

@@ -28,46 +28,23 @@ class query extends manipulation
     {
         let result = [];
 
-        const find = (object) => {
+        const find = (documents) => {
             let finded = [];
-            docsLoop: for(let doc of this._documents)
+            const queryKeys = Object.keys(query);
+            docsLoop: for(let doc of documents)
             {
-                for(let key of Object.keys(query))
+                for(let k of queryKeys)
                 {
-                    if((this._operators.isLogicalOperator(key) && !this._operators[key](query[key], doc)) || (typeof doc[key] === 'undefined' || this._operators.handleComparison(key, query[key], doc) === false))
+                    
+                    if((this._operators.isLogicalOperator(k) && !this._operators[k](query[k], doc)) && (typeof doc[k] === 'undefined' || this._operators.handleComparison(k, query[k], doc) === false))
                     {
                         continue docsLoop;
                     }
                 }
 
-
                 finded.push(0);
                 result.push(structuredClone(doc._data));
             }
-
-            Object.keys(query).forEach(key => {
-                if(key in this._operators)
-                {
-                    const operator_result = this._operators[key](query[key], documents);
-                    result = [...result, ...operator_result];
-                } else {
-
-                }
-                
-                /*if(typeof object[key] === 'object')
-                {
-                    find(object[key]);
-                } else
-                {
-                    console.log('object[key]', object[key], query[key]);
-                    if(object[key] === query[key])
-                    {
-                        result.push(object);
-                        if(firstOne)
-                            return object;
-                    }
-                }*/
-            });
 
             return finded.length > 0;
         };
