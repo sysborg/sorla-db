@@ -85,79 +85,121 @@ class operators {
         return this.operatorNot;
     }
 
+    get $nor() {
+        return this.operatorNor;
+    }
+
+    /**
+     * Not in operator
+     * @param mixed doc_value
+     * @param array queries
+     * @return boolean
+     */
+    get $nin() {
+        return (doc_value, queries) => {
+            return Array.isArray(queries) ? queries.indexOf(doc_value) === -1 : false;
+        }
+    }
+
+    /**
+     * In operator
+     * @param mixed doc_value
+     * @param array queries
+     * @return boolean
+     */
+    get $in() {
+        return (doc_value, queries) => {
+            return Array.isArray(queries) ? queries.indexOf(doc_value) > -1 : false;
+        }
+    }
+
     /**
      * less than
-     * @param object document
-     * @param string field
-     * @param mixed value
-     * @return array
+     * @param mixed doc_value
+     * @param mixed query
+     * @return boolean
      */
-    lessThan(document, field, value) {
-        return document[field] < value;
+    get $lt() {
+        return (doc_value, query) => {
+            return !Array.isArray(query) ? doc_value < query : false;
+        }
     }
 
     /**
      * less than or equal
-     * @param object document
-     * @param string field
-     * @param mixed value
-     * @return array
+     * @param mixed doc_value
+     * @param mixed query
+     * @return boolean
      */
-    lessThanOrEqual(document, field, value) {
-        return document[field] <= value;
+    get $lte() {
+        return (doc_value, query) => {
+            return !Array.isArray(query) ? doc_value <= query : false;
+        }
     }
 
     /**
      * greater than
-     * @param object document
-     * @param string field
-     * @param mixed value
-     * @return array
+     * @param mixed doc_value
+     * @param mixed query
+     * @return boolean
      */
-    greaterThan(document, field, value) {
-        return document[field] > value;
+    get $gt() {
+        return (doc_value, query) => {
+            return !Array.isArray(query) ? doc_value > query : false;
+        }
     }
 
     /**
      * greater than or equal
-     * @param object document
-     * @param string field
-     * @param mixed value
-     * @return array
+     * @param mixed doc_value
+     * @param mixed query
+     * @return boolean
      */
-    greaterThanOrEqual(document, field, value) {
-        return document[field] >= value;
+    get $gte() {
+        return (doc_value, query) => {
+            return !Array.isArray(query) ? doc_value >= query : false;
+        }
+    }
+
+    /**
+     * not equal
+     * @param mixed doc_value
+     * @param mixed query
+     * @return boolean
+     */
+    get $ne() {
+        return (doc_value, query) => {
+            return !Array.isArray(query) ? doc_value !== query : false;
+        }
     }
 
     /**
      * equal
-     * @param object document
-     * @param string field
-     * @param mixed value
-     * @return array
+     * @param mixed doc_value
+     * @param mixed query
+     * @return boolean
      */
-    equal(document, field, value) {
-        return document[field] == value;
-    }
-
-    get $lt() {
-        return this.lessThan;
-    }
-
-    get $lte() {
-        return this.lessThanOrEqual;
-    }
-
-    get $gt() {
-        return this.greaterThan;
-    }
-
-    get $gte() {
-        return this.greaterThanOrEqual;
-    }
-
     get $eq() {
-        return this.equal;
+        return (doc_value, query) => {
+            return !Array.isArray(query) ? doc_value === query : false;
+        };
+    }
+
+    /**
+     * Handling with comparison of columns
+     * @param string field
+     * @param mixed query
+     * @param object doc
+     * @return boolean
+     */
+    handleComparison(field, query, doc) {
+        if(typeof query === 'object')
+        {
+            const operator = Object.keys(query)[0];
+            return this[operator](doc[field], query[operator]);
+        }
+
+        return this.$eq(doc[field], query);
     }
 
     /**

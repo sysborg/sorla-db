@@ -34,14 +34,9 @@ class query extends manipulation
             {
                 for(let key of Object.keys(query))
                 {
-                    if(this._operators.isLogicalOperator(key) && !this._operators[key](query[key], doc))
+                    if((this._operators.isLogicalOperator(key) && !this._operators[key](query[key], doc)) || (typeof doc[key] === 'undefined' || this._operators.handleComparison(key, query[key], doc) === false))
                     {
                         continue docsLoop;
-                    }
-
-                    if(typeof doc[key] !== 'undefined')
-                    {
-                        
                     }
                 }
 

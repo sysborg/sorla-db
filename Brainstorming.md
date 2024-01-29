@@ -19,3 +19,4 @@ https://www.mongodb.com/docs/manual/reference/operator/query/regex/
 some operators need to return bool and the calling function receives the information if goes on or 
 add attach the documento to result.
 
+improving $in and add $all
