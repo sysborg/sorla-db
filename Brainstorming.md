@@ -1,9 +1,6 @@
 For the first query version needs only to see if has some non logical operator or non logical comparison to resend to find as a recursive method.
 
 - Prohibted $ and . on updates
-- Create a get that gets data from documents representing something like {teste: {testar: '123'}} that can be get using
-  teste.testar using the get environment from proxy.
-- Simplify the operators environment
 - Preparing new deep search using all capabilities
 - Preparing sort of data using new capabilities
 - Need to improve dot getting value when using find
@@ -21,4 +18,4 @@ https://www.mongodb.com/docs/manual/reference/operator/query/regex/
 some operators need to return bool and the calling function receives the information if goes on or 
 add attach the documento to result.
 
-improving $in and add $all
+Testing and fixing bugs in test, a not expected behaviour.

@@ -35,7 +35,7 @@ describe('SORLA Collection Queries Feature Test', () => {
                 uuid: faker.datatype.uuid()
             };
             this.objects.push(obj);
-            this.srla.db[this.collectionName].insertOne(obj);
+            this.srla.db[this.collectionName].insertOne(structuredClone(obj));
         }
     });
 
@@ -65,6 +65,7 @@ describe('SORLA Collection Queries Feature Test', () => {
 
     it('Creates a few documents and search for one of them', () => {
         const [itemIndex1,] = searchItem(this.objects);
+        console.log(this.objects[itemIndex1].uuid);
         const doc = this.srla.db[this.collectionName].findOne({ uuid: this.objects[itemIndex1].uuid }, { _id: 0 });
         expect(doc).to.deep.equal(this.objects[itemIndex1]);
     });

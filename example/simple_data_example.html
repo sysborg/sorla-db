@@ -160,7 +160,7 @@
 
                 //operators test
                 //testing search and
-                const result = s.db.simple.find({'$and': [{'name': 'John Doe'}, {'age': 25}]}); //should return 1
+                const result = s.db.simple.find({'$and': [{'name': 'John Doe'}, {'age': 25}]}, {_id: 0}); //should return 1
                 console.log('and', result);
 
                 //testing search or
