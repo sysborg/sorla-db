@@ -19,3 +19,5 @@ some operators need to return bool and the calling function receives the informa
 add attach the documento to result.
 
 Testing and fixing bugs in test, a not expected behaviour.
+
+Preparing a bunch of misc tests to search data, add sort data and create test sortable data.

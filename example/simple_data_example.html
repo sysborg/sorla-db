@@ -51,7 +51,16 @@
         </div>
 
         <script src="../dist/sorla.min.js"></script>
+
         <script>
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0,
+                        v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
             addItem = () => {
                 const name = document.getElementById('name').value;
                 const inscription = document.getElementById('inscription').value;
@@ -89,6 +98,7 @@
                 window.s = new sorla();
                 s.useDb('simple_database');
                 s.db.createCollection('simple');
+                const uuid_fix = generateUUID();
 
                 //creating data
                 s.db.simple.insertMany([
@@ -99,7 +109,8 @@
                         'parents': {
                             'father': 'John Doe Sr.',
                             'mother': 'Jane Doe'
-                        }
+                        },
+                        'uuid': generateUUID()
                     },
 
                     {
@@ -109,7 +120,8 @@
                         "parents": {
                             "father": "Elizabeth Brown",
                             "mother": "Elizabeth Brown"
-                        }
+                        },
+                        'uuid': generateUUID()
                     },
 
 
@@ -120,7 +132,8 @@
                         "parents": {
                             "father": "John Garcia",
                             "mother": "Patricia Garcia"
-                        }
+                        },
+                        'uuid': uuid_fix
                     },
 
                     {
@@ -130,7 +143,8 @@
                         "parents": {
                             "father": "Linda Brown",
                             "mother": "Elizabeth Brown"
-                        }
+                        },
+                        'uuid': generateUUID()
                     },
 
                     {
@@ -140,7 +154,8 @@
                         "parents": {
                             "father": "Robert Johnson",
                             "mother": "Elizabeth Johnson"
-                        }
+                        },
+                        'uuid': generateUUID()
                     },
 
                     {
@@ -150,7 +165,8 @@
                         "parents": {
                             "father": "Jennifer Brown",
                             "mother": "Jennifer Brown"
-                        }
+                        },
+                        'uuid': generateUUID()
                     }
                 ]);
 
@@ -166,6 +182,10 @@
                 //testing search or
                 const result2 = s.db.simple.find({'$or': [{'name': 'John Doe'}, {'parents.mother': 'Elizabeth Johnson'}]}); //should return 2
                 console.log('or', result2);
+
+                //testing search uuid
+                const result3 = s.db.simple.findOne({'uuid': uuid_fix});
+                console.log('uuid', uuid_fix, result3);
             });
         </script>
     </body>
