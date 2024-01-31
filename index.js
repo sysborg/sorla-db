@@ -1,7 +1,6 @@
 
 const fs = require('fs-extra');
 const browserify = require('browserify');
-const minify = require('uglify-es').minify;
 const path = require('path');
 const terser = require('terser');
 
