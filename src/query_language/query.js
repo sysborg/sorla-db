@@ -35,7 +35,9 @@ class query extends manipulation
             {
                 for(let k of queryKeys)
                 {
-                    
+                    if(!this._operators.isAnyOperator(k))
+                        this._operators.currentField = k;
+
                     if((this._operators.isLogicalOperator(k) && !this._operators[k](query[k], doc)) || (typeof doc[k] === 'undefined' || this._operators.handleComparison(k, query[k], doc) === false))
                     {
                         continue docsLoop;

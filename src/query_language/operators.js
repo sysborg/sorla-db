@@ -1,11 +1,38 @@
 class operators {
     /**
+     * Constructs the class and creates a property to store fieldname
+     */
+    constructor() {
+        this._currentField = null;
+        this._logicalOperators = ['$or', '$and', '$not', '$nor'];
+        this._comparisonOperators = ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'];
+    }
+
+    /**
+     * Set current field
+     * @param string field
+     * @return void
+     */
+    set currentField(field) {
+        this._currentField = field;
+    }
+
+    /**
+     * Check if is any operator
+     * @param string operator
+     * @return boolean
+     */
+    isAnyOperator(operator) {
+        return this.isLogicalOperator(operator) || this.isOperator(operator);
+    }
+
+    /**
      * check if is logical operator
      * @param string operator
      * @return boolean
      */
     isLogicalOperator(operator) {
-        return ['$or', '$and', '$not', '$nor'].indexOf(operator) > -1;
+        return this._logicalOperators.indexOf(operator) > -1;
     }
 
     /**
@@ -14,7 +41,7 @@ class operators {
      * @return boolean
      */
     isOperator(operator) {
-        return ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'].indexOf(operator) > -1;
+        return this._comparisonOperators.indexOf(operator) > -1;
     }
 
     /**
@@ -90,10 +117,8 @@ class operators {
     get $not() {
         const self = this;
         return (queries, doc) => {
-            if(!Array.isArray(queries))
-                throw new Error('The $not operator must be an array');
-
-            return !self.$and(queries, doc);
+            console.log(doc);
+            return self.handleComparison(this._currentField, {$ne: queries}, doc);
         };
     }
 
@@ -234,19 +259,11 @@ class operators {
         if(typeof query === 'object')
         {
             const operator = Object.keys(query)[0];
+            //console.log(doc, field, doc[field], query[operator], operator);
             return this[operator](doc[field], query[operator]);
         }
 
         return this.$eq(doc[field], query);
-    }
-
-    /**
-     * Not operator
-     * @param array queries
-     * @return array
-     */
-    get $ne() {
-        return this.notEqual;
     }
 }
 
