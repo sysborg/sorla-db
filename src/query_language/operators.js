@@ -117,7 +117,6 @@ class operators {
     get $not() {
         const self = this;
         return (queries, doc) => {
-            console.log(doc);
             return self.handleComparison(this._currentField, {$ne: queries}, doc);
         };
     }
@@ -259,7 +258,6 @@ class operators {
         if(typeof query === 'object')
         {
             const operator = Object.keys(query)[0];
-            //console.log(doc, field, doc[field], query[operator], operator);
             return this[operator](doc[field], query[operator]);
         }
 

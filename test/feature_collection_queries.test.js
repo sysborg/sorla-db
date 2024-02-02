@@ -85,8 +85,6 @@ describe('SORLA Collection Queries Feature Test', () => {
             uuid: { $not: this.objects[itemIndex1].uuid }
         });
 
-        //console.log(this.objects[itemIndex1].uuid, docs);
-
         expect(docs.length).to.be.equal(this.objects.length - 1);
     });
 

@@ -176,7 +176,7 @@
 
                 //operators test
                 //testing search and
-                const result = s.db.simple.find({'$and': [{'name': 'John Doe'}, {'age': 25}]}, {_id: 0}); //should return 1
+                /*const result = s.db.simple.find({'$and': [{'name': 'John Doe'}, {'age': 25}]}, {_id: 0}); //should return 1
                 console.log('and', result);
 
                 //testing search or
@@ -185,7 +185,11 @@
 
                 //testing search uuid
                 const result3 = s.db.simple.findOne({'uuid': uuid_fix});
-                console.log('uuid', uuid_fix, result3);
+                console.log('uuid', uuid_fix, result3);*/
+
+                //search uuid with not
+                const result4 = s.db.simple.find({'uuid': {'$not': uuid_fix}});
+                console.log('uuid not', uuid_fix, result4);
             });
         </script>
     </body>
