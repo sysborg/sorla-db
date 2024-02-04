@@ -19,3 +19,7 @@ const createFakeCollection = (srla, collectionName, number_objects) => {
         srla.db[collectionName].insertOne(obj);
     }
 }
+
+module.exports = {
+    createFakeCollection
+}
