@@ -6,7 +6,6 @@ class operators {
         this._currentField = null;
         this._logicalOperators = ['$or', '$and', '$not', '$nor'];
         this._comparisonOperators = ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'];
-        this._debugComparison = false;
     }
 
     /**
@@ -118,9 +117,11 @@ class operators {
     get $not() {
         const self = this;
         return (queries, doc) => {
-            console.log(this._currentField, {$ne: queries}, doc);
-            this._debugComparison = true;
-            return self.handleComparison(this._currentField, {$ne: queries}, doc);
+            if(typeof queries !== 'object')
+                throw new Error('The $not operator must be an object');
+
+            const handledComparison = self.handleComparison(this._currentField, queries, doc);
+            return !handledComparison;
         };
     }
 
@@ -258,9 +259,6 @@ class operators {
      * @return boolean
      */
     handleComparison(field, query, doc) {
-        if(this._debugComparison)
-            console.log(field, query, doc);
-        
         if(typeof query === 'object')
         {
             const operator = Object.keys(query)[0];

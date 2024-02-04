@@ -3,7 +3,6 @@
 
 const faker = require('faker');
 const sorla = require('./sorla.js');
-const { objects } = require('../test/feature_collection_queries.test.js');
 
 const createFakeCollection = (srla, collectionName, number_objects) => {
     if(!(srla instanceof sorla))

@@ -24,11 +24,9 @@ class query extends manipulation
      * @param bool firstOne
      * @return array
      */
-    _deepFind(query, documents, single=false)
+    _deepFind(query, single=false)
     {
-        let result = [];
-
-        const find = (documents) => {
+        const find = (documents, query, single, debug=false) => {
             let finded = [];
             const queryKeys = Object.keys(query);
             docsLoop: for(let doc of documents)
@@ -36,23 +34,34 @@ class query extends manipulation
                 for(let k of queryKeys)
                 {
                     if(!this._operators.isAnyOperator(k))
+                    {
                         this._operators.currentField = k;
 
-                    if((this._operators.isLogicalOperator(k) && !this._operators[k](query[k], doc)) || (typeof doc[k] === 'undefined' || this._operators.handleComparison(k, query[k], doc) === false))
+                        if(typeof query[k] === 'object')
+                        {
+                            if(find([doc], query[k], single).length === 0)
+                            {
+                                continue docsLoop;
+                            }
+
+                            continue;
+                        }
+                    }
+
+                    if((this._operators.isLogicalOperator(k) && !this._operators[k](query[k], doc)) && (typeof doc[k] === 'undefined' || this._operators.handleComparison(k, query[k], doc) === false))
                     {
                         continue docsLoop;
                     }
                 }
 
-                finded.push(0);
-                result.push(structuredClone(doc._data));
+                finded.push(structuredClone(doc._data));
+                if(single) break;
             }
 
-            return finded.length > 0;
+            return finded;
         };
 
-        find(this._documents);
-        return single ? result[0] : result;
+        return find(this._documents, query, single);
     }
 
     /**
@@ -86,8 +95,8 @@ class query extends manipulation
      */
     findOne(query, projection = null)
     {
-        const document = Object.keys(query).length === 0 ? structuredClone(this._documents[0]._data) : this._deepFind(query, this._documents, true);
-        return this._projection(document, projection);
+        const document = Object.keys(query).length === 0 ? structuredClone(this._documents[0]._data) : this._deepFind(query, true);
+        return this._projection(document[0], projection);
     }
 
     /**
@@ -98,7 +107,7 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = Object.keys(query).length === 0 ? structuredClone(this._documents) : this._deepFind(query, this._documents);
+        const documents = Object.keys(query).length === 0 ? structuredClone(this._documents) : this._deepFind(query);
         return this._projection(documents, projection);
     }
 

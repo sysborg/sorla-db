@@ -15,6 +15,5 @@ https://www.mongodb.com/docs/manual/reference/operator/query/regex/
 Preparing a bunch of misc tests to search data, add sort data and create test sortable data.
 
 //erros and improvements
-The error is because the field is checked and discard before the not operation in the coding.
-Other deal is that not operator needs a document to know how will compare.
-Other deal that a field can have more than one expression inside of object with no problem
+Bugs appears after resolving not, need to check and test why
+npm run test
