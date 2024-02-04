@@ -3,10 +3,13 @@
 
 const faker = require('faker');
 const sorla = require('./sorla.js');
+const { objects } = require('../test/feature_collection_queries.test.js');
 
 const createFakeCollection = (srla, collectionName, number_objects) => {
     if(!(srla instanceof sorla))
         throw new Error('srla must be an instance of sorla');
+
+    const objects = [];
 
     for(let i=0; i<number_objects; i++)
     {
@@ -17,9 +20,23 @@ const createFakeCollection = (srla, collectionName, number_objects) => {
             uuid: faker.datatype.uuid()
         };
         srla.db[collectionName].insertOne(obj);
+        objects.push(obj);
     }
+
+    return objects;
+}
+
+const getRandomComparisonData = (objects) => {
+    const itemIndex1 = Math.floor(Math.random() * objects.length);
+    let itemIndex2 = null;
+    do {
+        itemIndex2 = Math.floor(Math.random() * objects.length);
+    } while(itemIndex1 === itemIndex2);
+
+    return [objects[itemIndex1], objects[itemIndex2]];
 }
 
 module.exports = {
-    createFakeCollection
+    createFakeCollection,
+    getRandomComparisonData
 }
