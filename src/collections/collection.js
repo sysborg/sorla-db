@@ -15,6 +15,33 @@ class collection extends query
         this._documents = [];
         this._indexes = [];
     }
+
+    /**
+     * Returns the first document of the collection
+     * @return object
+     */
+    get first()
+    {
+        return structuredClone(this._documents[0]._data);
+    }
+
+    /**
+     * Returns the last document of the collection
+     * @return object
+     */
+    get last()
+    {
+        return structuredClone(this._documents[this._documents.length - 1]._data);
+    }
+
+    /**
+     * Return all the documents of the collection
+     * @return array
+     */
+    get all()
+    {
+        return this._documents.map(doc => structuredClone(doc._data));
+    }
 }
 
 module.exports =  collection;

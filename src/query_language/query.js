@@ -48,7 +48,8 @@ class query extends manipulation
                         }
                     }
 
-                    if((this._operators.isLogicalOperator(k) && !this._operators[k](query[k], doc)) && (typeof doc[k] === 'undefined' || this._operators.handleComparison(k, query[k], doc) === false))
+                    const isLogicalOperator = this._operators.isLogicalOperator(k);
+                    if((isLogicalOperator && !this._operators[k](query[k], doc)) || (!isLogicalOperator && !this._operators.handleComparison(k, query[k], doc)))
                     {
                         continue docsLoop;
                     }
@@ -79,6 +80,7 @@ class query extends manipulation
         for(let field in fields)
         {
             documents.forEach(doc => {
+                console.log(doc);
                 if(fields[field] === 0)
                     delete doc[field];
             });
@@ -95,7 +97,7 @@ class query extends manipulation
      */
     findOne(query, projection = null)
     {
-        const document = Object.keys(query).length === 0 ? structuredClone(this._documents[0]._data) : this._deepFind(query, true);
+        const document = Object.keys(query).length === 0 ? [this.first] : this._deepFind(query, true);
         return this._projection(document[0], projection);
     }
 
@@ -107,7 +109,7 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = Object.keys(query).length === 0 ? structuredClone(this._documents) : this._deepFind(query);
+        const documents = Object.keys(query).length === 0 ? structuredClone(this.all) : this._deepFind(query);
         return this._projection(documents, projection);
     }
 

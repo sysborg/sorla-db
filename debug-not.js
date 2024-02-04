@@ -11,7 +11,7 @@ sdb.db.createCollection('collection_test');
 const objects = helper.createFakeCollection(sdb, 'collection_test', numberOfObjects);
 const [itemIndex1, ] = helper.getRandomComparisonData(objects);
 
-const finded = sdb.db.collection_test.findOne({
+const finded = sdb.db.collection_test.find({
     uuid: {
         $not: {
             $eq: itemIndex1.uuid
@@ -21,4 +21,4 @@ const finded = sdb.db.collection_test.findOne({
 
  console.log(finded.length, numberOfObjects);
 
- console.log(finded);
+//console.log(finded);

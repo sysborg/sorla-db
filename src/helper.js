@@ -18,7 +18,7 @@ const createFakeCollection = (srla, collectionName, number_objects) => {
             age: faker.datatype.number(),
             uuid: faker.datatype.uuid()
         };
-        srla.db[collectionName].insertOne(obj);
+        srla.db[collectionName].insertOne(structuredClone(obj));
         objects.push(obj);
     }
 

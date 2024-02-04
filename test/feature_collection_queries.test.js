@@ -81,9 +81,15 @@ describe('SORLA Collection Queries Feature Test', () => {
 
     it('Creates a few documents and search using not', () => {
         const [itemIndex1,] = searchItem(this.objects);
-        const docs = this.srla.db[this.collectionName].find({
-            uuid: { $not: this.objects[itemIndex1].uuid }
-        });
+        const docs = this.srla.db[this.collectionName].find(
+            {
+                uuid: { 
+                    $not: {
+                        $eq: this.objects[itemIndex1].uuid 
+                    }
+                }
+            }
+        );
 
         expect(docs.length).to.be.equal(this.objects.length - 1);
     });

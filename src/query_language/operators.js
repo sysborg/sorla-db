@@ -120,7 +120,9 @@ class operators {
             if(typeof queries !== 'object')
                 throw new Error('The $not operator must be an object');
 
+            console.log(this._currentField, queries, doc);
             const handledComparison = self.handleComparison(this._currentField, queries, doc);
+            console.log('$not result', !handledComparison);
             return !handledComparison;
         };
     }
@@ -247,6 +249,7 @@ class operators {
      */
     get $eq() {
         return (doc_value, query) => {
+            console.log('$eq', doc_value, query);
             return !Array.isArray(query) ? doc_value === query : false;
         };
     }
@@ -259,6 +262,9 @@ class operators {
      * @return boolean
      */
     handleComparison(field, query, doc) {
+        if(typeof doc[field] === 'undefined')
+            return false;
+
         if(typeof query === 'object')
         {
             const operator = Object.keys(query)[0];
