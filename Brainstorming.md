@@ -2,10 +2,10 @@ For the first query version needs only to see if has some non logical operator o
 
 - Preparing sort of data using new capabilities
 - improving find behavior
+- improve not behavior adding possiblity to compare with most than one value
 
 For comparison operators and deny operator like not
 adding nor https://www.mongodb.com/docs/manual/reference/operator/query/nor/
-not https://www.mongodb.com/docs/manual/reference/operator/query/not/
 
 https://www.mongodb.com/docs/manual/reference/operator/query-comparison/
 https://www.mongodb.com/docs/manual/reference/operator/query/expr/

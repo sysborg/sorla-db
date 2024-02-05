@@ -94,6 +94,71 @@ describe('SORLA Collection Queries Feature Test', () => {
         expect(docs.length).to.be.equal(this.objects.length - 1);
     });
 
+    it('Creates a few documents and search using not with more than one expression', () => {
+        const [itemIndex1,] = searchItem(this.objects);
+        const docs = this.srla.db[this.collectionName].find(
+            {
+                age: { 
+                    $not: {
+                        $eq: this.objects[itemIndex1].age,
+                        $gt: 18
+                    }
+                }
+            }
+        );
+
+        expect(docs.length).to.be.equal(this.objects.length - 1);
+    });
+
+    it('Creates a few documents and search it using nor, both fields existing', () => {
+        const [itemIndex1,] = searchItem(this.objects);
+        const docs = this.srla.db[this.collectionName].findOne({
+            $nor: [
+                {name: this.objects[itemIndex1].name},
+                {age: this.objects[itemIndex1].age}
+            ]
+        });
+
+        expect(docs.name).to.not.be.equal(this.objects[itemIndex1].name);
+        expect(docs.age).to.not.be.equal(this.objects[itemIndex1].age);
+    });
+
+    it('Creates a few documents and search it using nor, first field missing', () => {
+        const [itemIndex1,] = searchItem(this.objects);
+        const docs = this.srla.db[this.collectionName].findOne({
+            $nor: [
+                {city: 'Ribeirão Preto'},
+                {age: this.objects[itemIndex1].age}
+            ]
+        });
+
+        expect(docs.age).to.not.be.equal(this.objects[itemIndex1].age);
+    });
+
+    it('Creates a few documents and search it using nor, secound field missing', () => {
+        const [itemIndex1,] = searchItem(this.objects);
+        const docs = this.srla.db[this.collectionName].findOne({
+            $nor: [
+                {name: this.objects[itemIndex1].name},
+                {instrument: 'Drums'}
+            ]
+        });
+
+        expect(docs.name).to.not.be.equal(this.objects[itemIndex1].name);
+    });
+
+    it('Creates a few documents and search it using nor, all fields missing', () => {
+        const [itemIndex1,] = searchItem(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            $nor: [
+                {city: 'Ribeirão Preto'},
+                {instrument: 'Drums'}
+            ]
+        });
+
+        expect(docs.length).to.be.equal(this.objects.length);
+    });
+
     /*it('Creates a few documents and search using or', () => {
         const [itemIndex1, itemIndex2] = searchItem(this.objects);
     });
