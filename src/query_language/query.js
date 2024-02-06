@@ -80,7 +80,6 @@ class query extends manipulation
         for(let field in fields)
         {
             documents.forEach(doc => {
-                console.log(doc);
                 if(fields[field] === 0)
                     delete doc[field];
             });
