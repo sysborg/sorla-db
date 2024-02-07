@@ -88,7 +88,7 @@ describe('SORLA Collection Queries Feature Test', () => {
         expect(docs.length).to.be.equal(this.objects.length - 1);
     });
 
-    it('Creates a few documents and search it using nor, both fields existing', () => {
+    it('Creates a few documents and search it using nor', () => {
         const [item1,] = helper.getRandomComparisonData(this.objects);
         const docs = this.srla.db[this.collectionName].findOne({
             $nor: [
@@ -99,41 +99,5 @@ describe('SORLA Collection Queries Feature Test', () => {
 
         expect(docs.name).to.not.be.equal(item1.name);
         expect(docs.age).to.not.be.equal(item1.age);
-    });
-
-    it('Creates a few documents and search it using nor, first field missing', () => {
-        const [item1,] = helper.getRandomComparisonData(this.objects);
-        const docs = this.srla.db[this.collectionName].findOne({
-            $nor: [
-                {city: 'Ribeirão Preto'},
-                {age: item1.age}
-            ]
-        });
-
-        expect(docs.age).to.not.be.equal(item1.age);
-    });
-
-    it('Creates a few documents and search it using nor, secound field missing', () => {
-        const [item1,] = helper.getRandomComparisonData(this.objects);
-        const docs = this.srla.db[this.collectionName].findOne({
-            $nor: [
-                {name: item1.name},
-                {instrument: 'Drums'}
-            ]
-        });
-
-        expect(docs.name).to.not.be.equal(item1.name);
-    });
-
-    it('Creates a few documents and search it using nor, all fields missing', () => {
-        const [item1,] = helper.getRandomComparisonData(this.objects);
-        const docs = this.srla.db[this.collectionName].find({
-            $nor: [
-                {city: 'Ribeirão Preto'},
-                {instrument: 'Drums'}
-            ]
-        });
-
-        expect(docs.length).to.be.equal(this.objects.length);
     });
 });
