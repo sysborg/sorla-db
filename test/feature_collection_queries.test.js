@@ -100,4 +100,18 @@ describe('SORLA Collection Queries Feature Test', () => {
         expect(docs.name).to.not.be.equal(item1.name);
         expect(docs.age).to.not.be.equal(item1.age);
     });
+
+    it('Creates a few documents and search it using nor with more than one expression', () => {
+        const [item1, item2] = helper.getRandomComparisonData(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            $nor: [
+                {name: item1.name},
+                {age: item1.age},
+                {name: item2.name},
+                {age: item2.age}
+            ]
+        });
+
+        expect(docs.length).to.be.equal(this.objects.length - 2);
+    });
 });

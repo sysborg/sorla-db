@@ -136,7 +136,17 @@ class operators {
             if(!Array.isArray(queries))
                 throw new Error('The $nor operator must be an array');
 
-            return !this.$or(queries, doc);
+            for(const query of queries) {
+                for(const attr of Object.keys(query)) {
+                    if(this.isLogicalOperator(attr) && this[attr](query[attr], doc))
+                        return false;
+
+                    if(this.handleComparison(attr, query[attr], doc))
+                        return false;
+                }
+            }
+
+            return true;
         };
     }
 

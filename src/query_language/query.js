@@ -1,5 +1,6 @@
 const manipulation = require('./manipulation.js');
 const operators = require('./operators.js');
+const cursor = require('../documents/cursor.js');
 
 class query extends manipulation
 {
@@ -55,14 +56,16 @@ class query extends manipulation
                     }
                 }
 
-                finded.push(structuredClone(doc._data));
+                finded.push(doc);
                 if(single) break;
             }
 
             return finded;
         };
 
-        return find(this._documents, query, single);
+        const result = find(this._documents, query, single);
+
+        return single ? result[0] : (new cursor(result));
     }
 
     /**
@@ -108,7 +111,7 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = Object.keys(query).length === 0 ? structuredClone(this.all) : this._deepFind(query);
+        const documents = Object.keys(query).length === 0 ? this.all : this._deepFind(query);
         return this._projection(documents, projection);
     }
 

@@ -16,6 +16,22 @@ class documents
                     return target._data[prop];
 
                 return target[prop];
+            },
+
+            set: (target, prop, value, receiver) => {
+                console.log(receiver);
+                if(receiver instanceof manipulation)
+                {
+                    if(prop in target._data)
+                    {
+                        target._data[prop] = value;
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                return false;
             }
         });
     }

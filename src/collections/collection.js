@@ -40,7 +40,7 @@ class collection extends query
      */
     get all()
     {
-        return this._documents.map(doc => structuredClone(doc._data));
+        return this._documents;
     }
 }
 
