@@ -114,4 +114,94 @@ describe('SORLA Collection Queries Feature Test', () => {
 
         expect(docs.length).to.be.equal(this.objects.length - 2);
     });
+
+    it('Test sort number in ascending order', () => {
+        this.srla.db.createCollection('sortNumberAsc');
+        this.srla.db.sortNumberAsc.insertMany([
+            {
+                name: 'A',
+                age: 20
+            }, 
+            {
+                name: 'B',
+                age: 10
+            }, 
+            {
+                name: 'C',
+                age: 30
+            },
+            {
+                name: 'A',
+                age: 3
+            }, 
+            {
+                name: 'B',
+                age: 5
+            }, 
+            {
+                name: 'C',
+                age: 1
+            },
+        ]);
+    });
+
+    it('Test sort number in descending order', () => {
+    });
+
+    it('Test sort string in ascending order', () => {
+    });
+
+    it('Test sort string in descending order', () => {
+    });
+
+    it('Test sort date in ascending order', () => {
+    });
+
+    it('Test sort date in descending order', () => {
+    });
+
+    it('Test sort boolean in ascending order', () => {
+    });
+
+    it('Test sort boolean in descending order', () => {
+    });
+
+    it('Test equal comparison', () => {
+    });
+
+    it('Test not equal comparison', () => {
+    });
+
+    it('Test greater than comparison', () => {
+    });
+
+    it('Test greater than or equal comparison', () => {
+    });
+
+    it('Test less than comparison', () => {
+    });
+
+    it('Test less than or equal comparison', () => {
+    });
+
+    it('Test in comparison', () => {
+    });
+
+    it('Test not in comparison', () => {
+    });
+
+    it('Test mixed comparison with and', () => {
+    });
+
+    it('Test mixed comparison with or', () => {
+    });
+
+    it('Test mixed comparison with not', () => {
+    });
+
+    it('Test mixed comparison with nor', () => {
+    });
+
+    it('Test mixed comparison with and, or, not and nor', () => {
+    });
 });
