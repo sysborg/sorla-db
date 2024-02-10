@@ -167,21 +167,58 @@ describe('SORLA Collection Queries Feature Test', () => {
     });
 
     it('Test equal comparison', () => {
+        const [item1,] = helper.getRandomComparisonData(this.objects);
+        const doc = this.srla.db[this.collectionName].findOne({ uuid: item1.uuid }, { _id: 0 });
+        expect(doc).to.deep.equal(item1);
     });
 
     it('Test not equal comparison', () => {
+        const [item1,] = helper.getRandomComparisonData(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            uuid: { $ne: item1.uuid }
+        });
+
+        expect(docs.length).to.be.equal(this.objects.length - 1);
     });
 
     it('Test greater than comparison', () => {
+        const [item1,] = helper.getRandomComparisonData(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            age: { $gt: item1.age }
+        });
+
+        countAges = this.objects.filter(obj => obj.age > item1.age).length;
+        expect(docs.length).to.be.equal(countAges);
     });
 
     it('Test greater than or equal comparison', () => {
+        const [item1,] = helper.getRandomComparisonData(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            age: { $gte: item1.age }
+        });
+
+        countAges = this.objects.filter(obj => obj.age >= item1.age).length;
+        expect(docs.length).to.be.equal(countAges);
     });
 
     it('Test less than comparison', () => {
+        const [item1,] = helper.getRandomComparisonData(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            age: { $lt: item1.age }
+        });
+
+        countAges = this.objects.filter(obj => obj.age < item1.age).length;
+        expect(docs.length).to.be.equal(countAges);
     });
 
     it('Test less than or equal comparison', () => {
+        const [item1,] = helper.getRandomComparisonData(this.objects);
+        const docs = this.srla.db[this.collectionName].find({
+            age: { $lte: item1.age }
+        });
+
+        countAges = this.objects.filter(obj => obj.age <= item1.age).length;
+        expect(docs.length).to.be.equal(countAges);
     });
 
     it('Test in comparison', () => {
