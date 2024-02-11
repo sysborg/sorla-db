@@ -56,7 +56,9 @@ class query extends manipulation
                     }
                 }
 
-                finded.push(doc);
+                const clone = Object.assign({}, doc);
+                clone._clone = true;
+                finded.push(clone);
                 if(single) break;
             }
 

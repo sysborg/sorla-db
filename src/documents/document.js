@@ -6,6 +6,7 @@ class documents
     {
         this._data = object;
         this._utils = new utils();
+        this._clone = false;
 
         return new Proxy(this, {
             get: (target, prop, receiver) => {
@@ -19,7 +20,6 @@ class documents
             },
 
             set: (target, prop, value, receiver) => {
-                console.log(receiver);
                 if(receiver instanceof manipulation)
                 {
                     if(prop in target._data)
