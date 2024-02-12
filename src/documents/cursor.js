@@ -104,6 +104,15 @@ class cursor {
     get length() {
         return this._data.length;
     }
+
+    /**
+     * Projection of the cursor
+     * @param json projection
+     * @return cursor
+     */
+    projection(projection) {
+        
+    }
 }
 
 module.exports = cursor;
