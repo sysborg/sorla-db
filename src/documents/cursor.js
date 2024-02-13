@@ -13,6 +13,7 @@ class cursor {
      */
     constructor(data) {
         this._data = typeof data === 'undefined' ? [] : data;
+        
         this.currIndex = 0;
     }
 
