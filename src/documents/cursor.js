@@ -12,7 +12,7 @@ class cursor {
      * @description Create a new cursor instance
      */
     constructor(data) {
-        this._data = data;
+        this._data = typeof data === 'undefined' ? [] : data;
         this.currIndex = 0;
     }
 
@@ -111,7 +111,26 @@ class cursor {
      * @return cursor
      */
     projection(projection) {
-        
+        this._data.forEach(element => {
+            for(const attribute of Object.keys(projection))
+            {
+                if(projection[attribute] === 0)
+                    delete element[attribute];
+            }
+        });
+    }
+
+    /**
+     * @method push
+     * @description Push an element to the cursor
+     * @param object element
+     * @return void
+     */
+    push(element) {
+        if(typeof element !== 'object')
+            throw new Error('The element must be an object');
+
+        this._data.push(element);
     }
 }
 

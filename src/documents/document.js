@@ -1,4 +1,5 @@
 const utils = require('../utils');
+const cursor = require('./cursor');
 
 class documents
 {
@@ -22,8 +23,10 @@ class documents
             set: (target, prop, value, receiver) => {
                 if(this._data.hasOwnProperty(prop) && !this._cloned)
                 {
-                    if(receiver instanceof manipulation)
-                    {
+                    if(
+                        receiver instanceof manipulation || 
+                        (target._cloned && receiver instanceof cursor)
+                    ) {
                         if(prop in target._data)
                         {
                             target._data[prop] = value;

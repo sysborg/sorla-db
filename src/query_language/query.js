@@ -27,6 +27,7 @@ class query extends manipulation
      */
     _deepFind(query, single=false)
     {
+        const c = new cursor();
         const find = (documents, query, single, debug=false) => {
             let finded = [];
             const queryKeys = Object.keys(query);
@@ -69,29 +70,6 @@ class query extends manipulation
     }
 
     /**
-     * Projection documents only fields
-     * @param array | object documents
-     * @param object fields
-     * @return array
-     */
-    _projection(documents, fields)
-    {
-        if(fields === null) return documents;
-
-        const isObject = !Array.isArray(documents) && typeof documents === 'object';
-        documents = Array.isArray(documents) ? documents : [documents];
-        for(let field in fields)
-        {
-            documents.forEach(doc => {
-                if(fields[field] === 0)
-                    delete doc[field];
-            });
-        }
-
-        return isObject ? documents[0] : documents;
-    }
-
-    /**
      * Find one document
      * @param query
      * @param projection
@@ -99,7 +77,7 @@ class query extends manipulation
      */
     findOne(query, projection = null)
     {
-        const document = Object.keys(query).length === 0 ? [this.first] : this._deepFind(query, true);
+        const document = this._deepFind(query, true);
         return this._projection(document[0], projection);
     }
 
@@ -111,7 +89,7 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = Object.keys(query).length === 0 ? this.all : this._deepFind(query);
+        const documents = this._deepFind(query);
         return this._projection(documents, projection);
     }
 
