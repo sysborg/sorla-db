@@ -68,7 +68,7 @@ class query extends manipulation
         const result = find(this._documents, query, single);
         const finded = new cursor(result, projection);
 
-        return single ? finded.first() : (new cursor(result));
+        return finded;
     }
 
     /**
@@ -80,7 +80,7 @@ class query extends manipulation
     findOne(query, projection = null)
     {
         const finded = this._deepFind(query, projection, true);
-        return finded;
+        return finded.first();
     }
 
     /**

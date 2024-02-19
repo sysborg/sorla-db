@@ -269,12 +269,16 @@ class operators {
      * @return boolean
      */
     handleComparison(field, query, doc) {
-        if(typeof doc[field] === 'undefined')
+        if(typeof doc[field] === 'undefined' && typeof doc[this._currentField] === 'undefined')
             return false;
+
+        if(this.isOperator(field))
+            return this[field](doc[this._currentField], query);
 
         if(typeof query === 'object')
         {
             const operator = Object.keys(query)[0];
+            field = typeof field === 'undefined' ? this._currentField : field;
             return this[operator](doc[field], query[operator]);
         }
 

@@ -63,7 +63,7 @@ class cursor {
      * @return mixed
      */
     first() {
-        return this._data[0];
+        return this._data[0]._data;
     }
 
     /**
@@ -113,6 +113,9 @@ class cursor {
      * @return cursor
      */
     projection(projection) {
+        if(projection === null || typeof projection !== 'object')
+            return;
+
         this._data.forEach(element => {
             for(const attribute of Object.keys(projection))
             {
