@@ -11,10 +11,11 @@ class cursor {
      * @param array data
      * @description Create a new cursor instance
      */
-    constructor(data) {
+    constructor(data, projection) {
         this._data = typeof data === 'undefined' ? [] : data;
-        
         this.currIndex = 0;
+        if(typeof projection === 'object')
+            this.projection(projection);
     }
 
     /**

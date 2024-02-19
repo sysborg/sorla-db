@@ -22,10 +22,11 @@ class query extends manipulation
     /**
      * Deeps find in object
      * @param object query
+     * @param object projection
      * @param bool firstOne
      * @return array
      */
-    _deepFind(query, single=false)
+    _deepFind(query, projection, single=false)
     {
         const c = new cursor();
         const find = (documents, query, single, debug=false) => {
@@ -65,8 +66,9 @@ class query extends manipulation
         };
 
         const result = find(this._documents, query, single);
+        const finded = new cursor(result, projection);
 
-        return single ? result[0] : (new cursor(result));
+        return single ? finded.first() : (new cursor(result));
     }
 
     /**
@@ -77,8 +79,8 @@ class query extends manipulation
      */
     findOne(query, projection = null)
     {
-        const document = this._deepFind(query, true);
-        return this._projection(document[0], projection);
+        const finded = this._deepFind(query, projection, true);
+        return finded;
     }
 
     /**
@@ -89,8 +91,8 @@ class query extends manipulation
      */
     find(query, projection = null)
     {
-        const documents = this._deepFind(query);
-        return this._projection(documents, projection);
+        const finded = this._deepFind(query, projection);
+        return finded;
     }
 
     //find
