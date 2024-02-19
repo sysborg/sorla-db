@@ -21,7 +21,7 @@ class documents
             },
 
             set: (target, prop, value, receiver) => {
-                if(this._data.hasOwnProperty(prop) && !this._cloned)
+                if(this._data.hasOwnProperty(prop))
                 {
                     if(
                         receiver instanceof manipulation || 
@@ -39,8 +39,7 @@ class documents
                     return false;
                 }
 
-                target._data[prop] = value;
-                return true;
+                return false;
             }
         });
     }
