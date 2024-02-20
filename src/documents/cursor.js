@@ -116,11 +116,13 @@ class cursor {
         if(projection === null || typeof projection !== 'object')
             return;
 
-        this._data.forEach(element => {
+        const self = this;
+        this._data.forEach(doc => {
             for(const attribute of Object.keys(projection))
             {
-                if(projection[attribute] === 0)
-                    delete element[attribute];
+                if(projection[attribute] === 0) {
+                    doc.deleteProp(attribute, self);
+                }
             }
         });
     }
