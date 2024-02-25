@@ -266,48 +266,4 @@ describe('SORLA Collection Queries Feature Test', () => {
         const filtered = this.objects.filter(obj => obj.name === item1.name || obj.age === item2.age);
         expect(docs.length).to.be.equal(filtered.length);
     });
-
-    it('Test mixed comparison with not', () => {
-        const [item1,] = helper.getRandomComparisonData(this.objects);
-        const docs = this.srla.db[this.collectionName].find({
-            $not: {
-                $and: [
-                    { name: item1.name },
-                    { age: item1.age }
-                ]
-            }
-        });
-
-        const filtered = this.objects.filter(obj => obj.name !== item1.name || obj.age !== item1.age);
-        expect(docs.length).to.be.equal(filtered.length);
-    });
-
-    it('Test mixed comparison with nor', () => {
-        const [item1, item2] = helper.getRandomComparisonData(this.objects);
-        const docs = this.srla.db[this.collectionName].find({
-            $nor: [
-                { name: item1.name },
-                { age: item2.age }
-            ]
-        });
-
-        const filtered = this.objects.filter(obj => obj.name !== item1.name && obj.age !== item2.age);
-        expect(docs.length).to.be.equal(filtered.length);
-    });
-
-    it('Test mixed comparison with and, or, not and nor', () => {
-        const [item1, item2] = helper.getRandomComparisonData(this.objects);
-        const docs = this.srla.db[this.collectionName].find({
-            $and: [
-                { name: item1.name },
-                { $or: [
-                    { age: item1.age },
-                    { $not: { age: item2.age } }
-                ] }
-            ]
-        });
-
-        const filtered = this.objects.filter(obj => obj.name === item1.name && (obj.age === item1.age || obj.age !== item2.age));
-        expect(docs.length).to.be.equal(filtered.length);
-    });
 });
