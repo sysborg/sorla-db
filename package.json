@@ -2,7 +2,7 @@
   "name": "sorla-db",
   "version": "1.0.0",
   "description": "A simple and temporary database focused to use in browser environment that will bring capabilities for other tools that will be launched as soon as possible.",
-  "main": "index.js",
+  "main": "dist/sorla.min.js",
   "scripts": {
     "mini": "node index.js",
     "build": "webpack",
