@@ -74,3 +74,44 @@ const results = window.sorla.db.updatedTags.find({
   ]
 });
 ```
+
+## Comparison operators
+
+### $eq
+$eq get all the documents that has exactly the same value as requested.
+For example if we ask age: { $eq: 53 }, will return one document in this example,
+but in general pourpose will return all documents that age is equal than 53.
+
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $eq: 36 }
+});
+```
+
+### $ne
+$ne or not equal operator search all lines that doens't have the inputed value.
+For example $ne:36, will return 1 line in this example, but for general pourpose will
+return all lines that age isn't 36.
+
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $ne: 36 }
+});
+```
+
+### $gt
+$gt compares values that is greater than, for example anyone who have age above 20, all the documents will return in this example.
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $gt: 36 }
+});
+```
+
+### $gte
+$gte compares values that is greater or equal than, for example anyone who have age above 20, all the documents will return in this example.
+But if we put there for example greater or equal than 53, will return only one document.
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $gte: 36 }
+});
+```
