@@ -25,10 +25,10 @@ Prohibited characters $ and .,
 $ because is used to call operators and . because uses to search key inside a object's object
 
 ## Registering and creating a collection example
+```
 window.sorla = new sorla();
 window.sorla.createDb('tags');
 window.sorla.useDb('tags');
-
 window.sorla.db.createCollection('updatedTags');
 window.sorla.db.updatedTags.insertMany([
   {
@@ -40,6 +40,7 @@ window.sorla.db.updatedTags.insertMany([
     age: 36
   }
 ]);
+```
 
 ## Find Operators
 
