@@ -100,7 +100,7 @@ const results = window.sorla.db.updatedTags.find({
 ```
 
 ### $gt
-$gt compares values that is greater than, for example anyone who have age above 20, all the documents will return in this example.
+$gt compares values that is greater than, for example everyone who have age above 20, all the documents will return in this example.
 ```
 const results = window.sorla.db.updatedTags.find({
   age: { $gt: 36 }
@@ -108,10 +108,19 @@ const results = window.sorla.db.updatedTags.find({
 ```
 
 ### $gte
-$gte compares values that is greater or equal than, for example anyone who have age above 20, all the documents will return in this example.
+$gte compares values that is greater or equal than, for example everyone who have age above 20, all the documents will return in this example.
 But if we put there for example greater or equal than 53, will return only one document.
 ```
 const results = window.sorla.db.updatedTags.find({
   age: { $gte: 36 }
+});
+```
+
+### $lt
+$lt compares values that is smaller than, for example everyone who have age smaller than 30, in the documents in this example will return no one,
+because no one has age smaller than 30.
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $lt: 30 }
 });
 ```
