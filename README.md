@@ -124,3 +124,12 @@ const results = window.sorla.db.updatedTags.find({
   age: { $lt: 30 }
 });
 ```
+
+### $lte
+$lte compares values that is smaller or equal than, for example veryone who have age smaller then 36, in the documents in this example will return one,
+because Anderson has age of 36 that is equal 36, remember smaller or equal.
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $lte: 36 }
+});
+```
