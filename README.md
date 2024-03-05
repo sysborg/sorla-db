@@ -133,3 +133,12 @@ const results = window.sorla.db.updatedTags.find({
   age: { $lte: 36 }
 });
 ```
+
+### $in
+$in operator compares if any value inside an array exists, like in operator in SQL, i will add a exemplo here that will return only one document.
+Will return Anderson because age 36 exists is in array object.
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $in: [36, 44]}
+});
+```
