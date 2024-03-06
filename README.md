@@ -75,6 +75,18 @@ const results = window.sorla.db.updatedTags.find({
 });
 ```
 
+### $not
+The **$not** operator processes the queries and invert the bool result, for example if {age: 36} return true for Anderson and false for Sonia then Sonia will be the one who will be returned,
+remember about invert the boolean result? Anderson that is true becomes false and Sonia that is false becomes true.
+
+```
+const results = window.sorla.db.updatedTags.find({
+  age: {
+    $not: {$eq: 36}
+  }
+});
+```
+
 ## Comparison operators
 
 ### $eq
