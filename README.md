@@ -142,3 +142,12 @@ const results = window.sorla.db.updatedTags.find({
   age: { $in: [36, 44]}
 });
 ```
+
+### $nin
+$nin operator is opposite of $in operator, returns only documents that the values doesn't match with any of the query.
+This will result in a total of 0 documents.
+```
+const results = window.sorla.db.updatedTags.find({
+  age: { $nin: [36, 53]}
+});
+```
