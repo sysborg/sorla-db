@@ -87,6 +87,57 @@ const results = window.sorla.db.updatedTags.find({
 });
 ```
 
+### $nor
+The **$nor** operator returns the documents that match none of the queries in the array.
+
+```
+const results = window.sorla.db.updatedTags.find({
+  $nor: [
+    {name: 'Anderson'},
+    {age: {$lt: 18}}
+  ]
+});
+```
+
+### Nesting logical operators
+**$and**, **$or** and **$nor** can be nested at any depth, and every query inside them can mix
+fields and other logical operators. This returns everyone aged 30 or more whose name is Sonia
+or who lives in A or B:
+
+```
+const results = window.sorla.db.updatedTags.find({
+  $and: [
+    {age: {$gte: 30}},
+    {$or: [
+      {name: 'Sonia'},
+      {city: {$in: ['A', 'B']}}
+    ]}
+  ]
+});
+```
+
+### More than one operator per field
+A field condition can hold several operators and the document must satisfy all of them,
+at the top level or inside any logical operator:
+
+```
+const results = window.sorla.db.updatedTags.find({
+  $or: [
+    {age: {$gte: 30, $lte: 40}},
+    {name: 'Anderson'}
+  ]
+});
+```
+
+**$not** inverts the whole condition it wraps: `{age: {$not: {$gte: 30, $lte: 40}}}` returns
+the documents whose age is *not* between 30 and 40. It must be used inside a field condition.
+
+### Missing fields and null
+A document without the queried field does not match `$eq`, `$gt`, `$in`... but does match
+`$ne` and `$nin`, like MongoDB. `null` can be used as a value: `{name: null}`.
+
+Unknown operators and logical operators that do not receive an array throw an error.
+
 ## Comparison operators
 
 ### $eq
