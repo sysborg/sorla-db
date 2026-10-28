@@ -1,20 +1,10 @@
 class operators {
     /**
-     * Constructs the class and creates a property to store fieldname
+     * Constructs the class with the list of supported operators
      */
     constructor() {
-        this._currentField = null;
         this._logicalOperators = ['$or', '$and', '$not', '$nor'];
         this._comparisonOperators = ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'];
-    }
-
-    /**
-     * Set current field
-     * @param string field
-     * @return void
-     */
-    set currentField(field) {
-        this._currentField = field;
     }
 
     /**
@@ -45,109 +35,97 @@ class operators {
     }
 
     /**
-     * Or operator
-     * @param array queries
+     * Checks if a document matches a query. Logical operators can be nested at any depth:
+     * {$and: [{age: {$gte: 30}}, {$or: [{name: 'X'}, {city: {$in: ['A', 'B']}}]}]}
      * @param object doc
-     * @return array
+     * @param object query
+     * @return boolean
      */
-    get $or() {
-        return (queries, doc) => {
-            if(!Array.isArray(queries))
-                throw new Error('The $or operator must be an array');
+    matches(doc, query) {
+        if(query === null || typeof query !== 'object' || Array.isArray(query))
+            throw new Error('The query must be an object');
 
-            let result = false;
-            queryLoop: for(const query of queries) {
-                for(const attr of Object.keys(query)) {
-                    if(this.isLogicalOperator(attr) && this[attr](query[attr], doc))
-                    {
-                        result = true;
-                        continue queryLoop;
-                    }
+        for(const key of Object.keys(query)) {
+            if(this.isLogicalOperator(key)) {
+                if(!this.matchesLogical(key, query[key], doc))
+                    return false;
 
-                    if(this.handleComparison(attr, query[attr], doc))
-                    {
-                        result = true;
-                        continue queryLoop;
-                    }
-                }
+                continue;
             }
 
-            return result;
-        };
+            if(!this.matchesCondition(doc[key], query[key]))
+                return false;
+        }
+
+        return true;
     }
 
     /**
-     * And operator
+     * Logical operators: every query of $and, at least one of $or, none of $nor
+     * @param string operator
      * @param array queries
      * @param object doc
-     * @return array
+     * @return boolean
      */
-    get $and() {
-        return (queries, doc) => {
-            if(!Array.isArray(queries))
-                throw new Error('The $and operator must be an array');
+    matchesLogical(operator, queries, doc) {
+        if(operator === '$not')
+            throw new Error('The $not operator must be used inside a field condition, like {age: {$not: {$gt: 30}}}');
 
-            let result = true;
-            queryLoop: for(const query of queries) {
-                for(const attr of Object.keys(query)) {
-                    if(this.isLogicalOperator(attr) && !this[attr](query[attr], doc))
-                    {
-                        result = false;
-                        continue queryLoop;
-                    }
+        if(!Array.isArray(queries))
+            throw new Error(`The ${operator} operator must be an array`);
 
-                    if(!this.handleComparison(attr, query[attr], doc))
-                    {
-                        result = false;
-                        continue queryLoop;
-                    }
-                }
-            }
+        switch(operator) {
+            case '$and':
+                return queries.every(query => this.matches(doc, query));
+            case '$or':
+                return queries.some(query => this.matches(doc, query));
+            case '$nor':
+                return !queries.some(query => this.matches(doc, query));
+        }
 
-            return result;
-        };
+        return false;
     }
 
     /**
-     * Not operator
-     * @param array queries
-     * @param object doc
-     * @return array
+     * Checks a field value against a condition: a plain value means equality, an object of operators
+     * must satisfy every operator ({$gte: 1, $lte: 5}), and $not inverts a condition
+     * @param mixed value
+     * @param mixed condition
+     * @return boolean
      */
-    get $not() {
-        const self = this;
-        return (queries, doc) => {
-            if(typeof queries !== 'object')
-                throw new Error('The $not operator must be an object');
+    matchesCondition(value, condition) {
+        if(!this.isOperatorObject(condition))
+            return this.$eq(value, condition);
 
-            const handledComparison = self.handleComparison(this._currentField, queries, doc);
-            return !handledComparison;
-        };
+        for(const operator of Object.keys(condition)) {
+            if(operator === '$not') {
+                if(this.matchesCondition(value, condition[operator]))
+                    return false;
+
+                continue;
+            }
+
+            if(!this.isOperator(operator))
+                throw new Error(`Unknown operator ${operator}`);
+
+            if(!this[operator](value, condition[operator]))
+                return false;
+        }
+
+        return true;
     }
 
     /**
-     * Nor operator
-     * @param array queries
-     * @param object doc
-     * @return array
+     * Whether a condition is an object made of operators, like {$gt: 5}
+     * @param mixed condition
+     * @return boolean
      */
-    get $nor() {
-        return (queries, doc) => {
-            if(!Array.isArray(queries))
-                throw new Error('The $nor operator must be an array');
+    isOperatorObject(condition) {
+        if(condition === null || typeof condition !== 'object' || Array.isArray(condition))
+            return false;
 
-            for(const query of queries) {
-                for(const attr of Object.keys(query)) {
-                    if(this.isLogicalOperator(attr) && this[attr](query[attr], doc))
-                        return false;
-
-                    if(this.handleComparison(attr, query[attr], doc))
-                        return false;
-                }
-            }
-
-            return true;
-        };
+        const keys = Object.keys(condition);
+        return keys.length > 0 && keys.every(key => key.startsWith('$'));
     }
 
     /**
@@ -259,30 +237,6 @@ class operators {
         return (doc_value, query) => {
             return !Array.isArray(query) ? doc_value === query : false;
         };
-    }
-
-    /**
-     * Handling with comparison of columns
-     * @param string field
-     * @param mixed query
-     * @param object doc
-     * @return boolean
-     */
-    handleComparison(field, query, doc) {
-        if(typeof doc[field] === 'undefined' && typeof doc[this._currentField] === 'undefined')
-            return false;
-
-        if(this.isOperator(field))
-            return this[field](doc[this._currentField], query);
-
-        if(typeof query === 'object')
-        {
-            const operator = Object.keys(query)[0];
-            field = typeof field === 'undefined' ? this._currentField : field;
-            return this[operator](doc[field], query[operator]);
-        }
-
-        return this.$eq(doc[field], query);
     }
 }
 

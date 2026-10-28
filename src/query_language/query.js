@@ -28,47 +28,17 @@ class query extends manipulation
      */
     _deepFind(query, projection, single=false)
     {
-        const c = new cursor();
-        const find = (documents, query, single, debug=false) => {
-            let finded = [];
-            const queryKeys = Object.keys(query);
-            docsLoop: for(let doc of documents)
-            {
-                for(let k of queryKeys)
-                {
-                    if(!this._operators.isAnyOperator(k))
-                    {
-                        this._operators.currentField = k;
+        const finded = [];
+        for(const doc of this._documents)
+        {
+            if(!this._operators.matches(doc, query))
+                continue;
 
-                        if(typeof query[k] === 'object')
-                        {
-                            if(find([doc], query[k], single).length === 0)
-                            {
-                                continue docsLoop;
-                            }
+            finded.push(doc.clone());
+            if(single) break;
+        }
 
-                            continue;
-                        }
-                    }
-
-                    const isLogicalOperator = this._operators.isLogicalOperator(k);
-                    if((isLogicalOperator && !this._operators[k](query[k], doc)) || (!isLogicalOperator && !this._operators.handleComparison(k, query[k], doc)))
-                    {
-                        continue docsLoop;
-                    }
-                }
-
-                finded.push(doc.clone());
-                if(single) break;
-            }
-
-            return finded;
-        };
-
-        const result = find(this._documents, query, single);
-        const finded = new cursor(result, projection);
-
-        return finded;
+        return new cursor(finded, projection);
     }
 
     /**
