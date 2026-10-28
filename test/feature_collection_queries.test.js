@@ -85,7 +85,9 @@ describe('SORLA Collection Queries Feature Test', () => {
             }
         );
 
-        expect(docs.length).to.be.equal(this.objects.length - 1);
+        // $not negates the whole condition: excluded when age equals item1.age AND is over 18
+        const expected = this.objects.filter(obj => !(obj.age === item1.age && obj.age > 18));
+        expect(docs.length).to.be.equal(expected.length);
     });
 
     it('Creates a few documents and search it using nor', () => {
@@ -112,59 +114,12 @@ describe('SORLA Collection Queries Feature Test', () => {
             ]
         });
 
-        expect(docs.length).to.be.equal(this.objects.length - 2);
+        // random names and ages can repeat, so count the expected documents instead of assuming 2
+        const expected = this.objects.filter(obj => obj.name !== item1.name && obj.age !== item1.age && obj.name !== item2.name && obj.age !== item2.age);
+        expect(docs.length).to.be.equal(expected.length);
     });
 
-    it('Test sort number in ascending order', () => {
-        this.srla.db.createCollection('sortNumberAsc');
-        this.srla.db.sortNumberAsc.insertMany([
-            {
-                name: 'A',
-                age: 20
-            }, 
-            {
-                name: 'B',
-                age: 10
-            }, 
-            {
-                name: 'C',
-                age: 30
-            },
-            {
-                name: 'A',
-                age: 3
-            }, 
-            {
-                name: 'B',
-                age: 5
-            }, 
-            {
-                name: 'C',
-                age: 1
-            },
-        ]);
-    });
-
-    it('Test sort number in descending order', () => {
-    });
-
-    it('Test sort string in ascending order', () => {
-    });
-
-    it('Test sort string in descending order', () => {
-    });
-
-    it('Test sort date in ascending order', () => {
-    });
-
-    it('Test sort date in descending order', () => {
-    });
-
-    it('Test sort boolean in ascending order', () => {
-    });
-
-    it('Test sort boolean in descending order', () => {
-    });
+    // sorting is covered by test/feature_cursor.test.js
 
     it('Test equal comparison', () => {
         const [item1,] = helper.getRandomComparisonData(this.objects);

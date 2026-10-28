@@ -11,8 +11,10 @@ describe('SORLA Collection Feature Test', () => {
         this.srla.useDb(this.dbname);
     });
 
+    let sequence = 0;
     beforeEach(() => {
-        this.collectionName = faker.random.word();
+        // random words repeat or clash with database properties ("name"), so make them unique
+        this.collectionName = `collection_${++sequence}`;
         this.srla.db.createCollection(this.collectionName);
     });
 
