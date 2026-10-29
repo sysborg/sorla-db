@@ -22,7 +22,8 @@ describe('SORLA package', () => {
     it('the browser bundle registers window.sorla and does not include dev dependencies', () => {
         const bundle = fs.readFileSync(path.join(root, 'dist/sorla.min.js'), 'utf8');
         expect(bundle).to.not.include('faker');
-        expect(bundle.length).to.be.below(50 * 1024);
+        // budget: raise it on purpose (1.7.0 added live queries, 53 kB)
+        expect(bundle.length).to.be.below(64 * 1024);
         const window = {};
         new Function('window', bundle)(window);
         expect(window.sorla).to.be.a('function');
@@ -30,7 +31,7 @@ describe('SORLA package', () => {
         const srla = new window.sorla();
         srla.useDb('bundle');
         srla.db.createCollection('c', { required: ['a'] });
-        for(const method of ['bindForm', 'validate', 'updateOne', 'deleteMany', 'on', 'applyDefaults'])
+        for(const method of ['bindForm', 'validate', 'updateOne', 'deleteMany', 'on', 'applyDefaults', 'bulkWrite', 'stream', 'connect', 'watch'])
             expect(srla.db.c[method], method).to.be.a('function');
         expect(window.sorla.ValidationError).to.be.a('function');
         expect(srla.db.getStats).to.be.a('function');
