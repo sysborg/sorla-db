@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased]
+## [1.7.0] - 2026-10-29
 
 ### Added
 - `collection.watch(query, options)`: live queries with `subscribe()` / `getSnapshot()`, frozen copies, incremental updates (only changed documents are copied), one notification per batch of writes, watching only while subscribed. A Svelte store and an Observable (RxJS `from()`).
