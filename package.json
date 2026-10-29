@@ -13,6 +13,22 @@
       "import": "./index.mjs",
       "require": "./src/sorla.js"
     },
+    "./react": {
+      "types": "./adapters/react.d.ts",
+      "import": "./adapters/react.mjs"
+    },
+    "./vue": {
+      "types": "./adapters/vue.d.ts",
+      "import": "./adapters/vue.mjs"
+    },
+    "./svelte": {
+      "types": "./adapters/svelte.d.ts",
+      "import": "./adapters/svelte.mjs"
+    },
+    "./angular": {
+      "types": "./adapters/angular.d.ts",
+      "import": "./adapters/angular.mjs"
+    },
     "./dist/sorla.min.js": "./dist/sorla.min.js",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
@@ -22,12 +38,13 @@
     "!src/helper.js",
     "dist",
     "index.mjs",
-    "index.d.ts"
+    "index.d.ts",
+    "adapters"
   ],
   "scripts": {
     "build": "node index.js",
     "mini": "node index.js",
-    "test": "jest"
+    "test": "jest && node --test test/adapters/adapters.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -50,6 +67,7 @@
   },
   "homepage": "https://github.com/sysborg/sorla-db#readme",
   "devDependencies": {
+    "@angular/core": "^19.2.14",
     "browserify": "^17.0.0",
     "chai": "^4.3.8",
     "faker": "^5.5.3",
@@ -58,9 +76,34 @@
     "jsdom": "^22.1.0",
     "jsdom-global": "^3.0.2",
     "mocha": "^10.2.0",
-    "terser": "^5.27.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rxjs": "^7.8.1",
+    "svelte": "^4.2.19",
+    "terser": "^5.27.0",
+    "vue": "^3.5.13"
   },
   "engines": {
     "node": ">=18"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "vue": ">=3.3",
+    "svelte": ">=3",
+    "@angular/core": ">=16"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    }
   }
 }
