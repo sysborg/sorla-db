@@ -7,6 +7,8 @@ class emitter
     constructor()
     {
         this._listeners = new Map();
+        // increases with every change, so readers can tell whether anything changed since they looked
+        this._version = 0;
     }
 
     /**
@@ -51,6 +53,7 @@ class emitter
      */
     _emitChange(type, payload)
     {
+        this._version++;
         const event = { type, ...payload };
         for(const name of [type, 'change'])
         {

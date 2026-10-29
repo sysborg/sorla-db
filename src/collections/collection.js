@@ -3,6 +3,7 @@ const { bindForm } = require('../form/form.js');
 const { clone } = require('../clone.js');
 const { stream } = require('../sync/sse.js');
 const { connect } = require('../sync/socket.js');
+const liveQuery = require('../live/live-query.js');
 
 class collection extends query
 {
@@ -80,6 +81,18 @@ class collection extends query
     connect(url, options = {})
     {
         return connect(this, url, options);
+    }
+
+    /**
+     * Live query: the matching documents, kept current as the collection changes.
+     * subscribe(fn) / getSnapshot(), the base of the React, Vue, Svelte and Angular bindings.
+     * @param object query
+     * @param object options {sort, nulls, collation, skip, limit, projection}
+     * @return liveQuery
+     */
+    watch(query = {}, options = {})
+    {
+        return new liveQuery(this, query, options);
     }
 }
 
