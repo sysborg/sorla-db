@@ -199,6 +199,65 @@ off();
 `insertMany` and `updateMany` emit one event for the whole operation, and nothing is emitted when nothing
 changed. A listener that throws does not undo or interrupt the write.
 
+## Live queries and framework bindings
+
+`watch()` keeps the documents of a query current as the collection changes:
+
+```
+const open = db.tasks.watch({ done: false }, { sort: { due: 1 }, limit: 50 });
+const off = open.subscribe(tasks => render(tasks));   // called now and after every change
+open.getSnapshot();                                   // the same array until something changes
+off();
+```
+
+- The documents are frozen copies. After a change only the changed documents are copied again; the
+  others keep their object, so a framework can skip the rows that did not change.
+- Writes made in one go (a loop of updates, a `bulkWrite`, an SSE block) notify once, on the next
+  microtask.
+- The collection is watched only while there are subscribers, so nothing needs closing.
+- Options: `sort`, `nulls`, `collation`, `skip`, `limit`, `projection`.
+
+The bindings are optional entry points; install the framework yourself.
+
+**React** (18+)
+```
+import { useQuery, useDocument } from 'sorla-db/react';
+
+function Tasks() {
+  const tasks = useQuery(db.tasks, { done: false }, { sort: { due: 1 } });   // inline objects are fine
+  return tasks.map(task => <Task key={task._id} task={task} />);
+}
+const task = useDocument(db.tasks, id);   // or null
+```
+
+**Vue** (3.3+)
+```
+import { useQuery } from 'sorla-db/vue';
+
+const owner = ref('ana');
+const tasks = useQuery(db.tasks, () => ({ owner: owner.value }), { sort: { due: 1 } });   // a ref
+```
+
+**Svelte** (3, 4 and 5)
+```
+import { query } from 'sorla-db/svelte';
+const tasks = query(db.tasks, { done: false });
+// {#each $tasks as task (task._id)} ... {/each}
+```
+
+**Angular** (16+)
+```
+import { querySignal } from 'sorla-db/angular';
+
+export class TasksComponent {
+  tasks = querySignal(db.tasks, { done: false }, { sort: { due: 1 } });   // a signal
+  // @for (task of tasks(); track task._id) { ... }
+}
+```
+`querySignal` needs an injection context (a field initializer or the constructor) or `{ injector }`,
+and stops when the component is destroyed. A live query is also an Observable:
+`from(db.tasks.watch(query))` works with RxJS.
+
 ## Loading from a backend: Server-Sent Events and WebSocket
 
 Both are alternatives to a plain `fetch`, not replacements: use them when there are many rows to

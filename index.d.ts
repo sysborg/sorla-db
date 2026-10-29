@@ -266,6 +266,26 @@ export interface LoadResult {
     total?: number;
 }
 
+export interface LiveQueryOptions {
+    sort?: SortSpec;
+    nulls?: 'first' | 'last';
+    collation?: SortOptions['collation'];
+    skip?: number;
+    /** 0 means no limit. */
+    limit?: number;
+    projection?: Projection;
+}
+
+/** collection.watch(): the matching documents kept current. A Svelte store and an Observable. */
+export declare class LiveQuery<T extends Document = Document> {
+    /** The same frozen array until something changes. */
+    getSnapshot(): readonly Readonly<T>[];
+    /** Called at once and after every change (merged per microtask). Returns unsubscribe (also .unsubscribe()). */
+    subscribe(listener: ((documents: readonly Readonly<T>[]) => void) | { next(documents: readonly Readonly<T>[]): void }): (() => void) & { unsubscribe(): void };
+    readonly length: number;
+    close(): void;
+}
+
 export declare class Remote {
     readonly state: 'connecting' | 'open' | 'closed';
     /** {type: 'load', id, ...params} → {type: 'reply', id, rows, hasMore, total} */
@@ -332,6 +352,8 @@ export declare class Collection {
     bulkWrite(operations: BulkWriteOperation[], options?: { ordered?: boolean }): BulkWriteResult;
     setOptions(options: CollectionOptions): this;
     getOptions(): Required<CollectionOptions>;
+    /** Live query: subscribe(fn) / getSnapshot(), see sorla-db/react, /vue, /svelte, /angular. */
+    watch<T extends Document = Document>(query?: Query, options?: LiveQueryOptions): LiveQuery<T>;
     /** Loads rows sent in blocks by a Server-Sent Events endpoint. */
     stream(url: string, options?: StreamOptions): StreamController;
     /** WebSocket to a backend: pages, requests and pushed changes. */

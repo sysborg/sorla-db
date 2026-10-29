@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [Unreleased]
+
+### Added
+- `collection.watch(query, options)`: live queries with `subscribe()` / `getSnapshot()`, frozen copies, incremental updates (only changed documents are copied), one notification per batch of writes, watching only while subscribed. A Svelte store and an Observable (RxJS `from()`).
+- Framework bindings as optional entry points: `sorla-db/react` (`useQuery`, `useDocument`), `sorla-db/vue` (`useQuery`), `sorla-db/svelte` (`query`, `documentStore`) and `sorla-db/angular` (`querySignal`, `documentSignal`), with types.
+
 ## [1.6.0] - 2026-10-29
 
 ### Added
