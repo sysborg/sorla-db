@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.7.1] - 2026-10-29
+
+### Added
+- `stream(url, { apply(type, data) })` handles the blocks with your code instead of writing them to the collection, and `sorla.stream(url, { apply })` works without a collection (for components that store rows themselves, like a data grid).
+
+### Performance
+- Updates copy only the objects along the changed paths: the new version shares the untouched parts with the previous one (stored data is never changed in place). `bulkWrite` of 100 000 `$set` by `_id` went from about 650 ms to 180 ms.
+- Change event payloads (`documents`, `previous`) are copied only when someone listens to that event or to `change`; without listeners they are empty.
+- Comparing the previous and new version of a document skips the shared parts instead of serializing both to JSON.
+- Numbers, strings and booleans are no longer passed through `structuredClone`.
+
 ## [1.7.0] - 2026-10-29
 
 ### Added

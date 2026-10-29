@@ -310,6 +310,9 @@ other failures are retried up to `maxRetries` (10) times in a row.
 [`example/sse_server.js`](example/sse_server.js) is a reference endpoint in plain Node (100 000 rows in
 blocks of 5 000, resuming from `Last-Event-ID`, waiting for `drain` when the client reads slowly).
 
+To store the blocks yourself, pass `apply`: `sorla.stream(url, { apply: (type, data) => ... })` works
+without a collection (`type` is `'rows'`, `'ops'` or `'delete'`).
+
 `transport: 'eventsource'` uses the browser's `EventSource` instead (GET only, no custom headers,
 cookies with `withCredentials`).
 

@@ -224,6 +224,8 @@ export interface StreamOptions {
     onError?: (error: Error) => void;
     /** Events with other names. */
     onMessage?: (event: { type: string; data: string; id: string | null }) => void;
+    /** Handle rows / ops / delete yourself instead of writing them to the collection. */
+    apply?: (type: 'rows' | 'ops' | 'delete', data: unknown) => void;
     fetch?: typeof fetch;
     EventSource?: typeof EventSource;
 }
@@ -396,6 +398,8 @@ declare class sorla {
     static ValidationError: typeof ValidationError;
     /** WebSocket not tied to a collection: load() returns the rows without storing them. */
     static connect(url: string, options?: ConnectOptions): Remote;
+    /** Server-Sent Events stream without a collection: options.apply receives each block. */
+    static stream(url: string, options: StreamOptions & { apply: NonNullable<StreamOptions['apply']> }): StreamController;
     /** text/event-stream parser. */
     static readEventStream(body: ReadableStream<Uint8Array>, onEvent: (event: { type: string; data: string; id: string | null }) => void, onRetry?: (ms: number) => void): Promise<void>;
     constructor();
