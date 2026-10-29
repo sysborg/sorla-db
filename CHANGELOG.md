@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.5.1] - 2026-10-29
+
+### Fixed
+- Inserts were quadratic: every inserted document re-read the ids of the whole collection, so `insertMany` of 100 000 documents took minutes. The ids are now read once per call, and a performance test guards it.
+
 ## [1.5.0] - 2026-10-29
 
 ### Added
