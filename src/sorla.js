@@ -104,6 +104,33 @@ class sorla{
     }
 
     /**
+     * Names of the databases, in creation order
+     * @return array
+     */
+    listDatabases()
+    {
+        return this._dbs.map(db => db.name);
+    }
+
+    /**
+     * Removes a database and its collections; when it was selected, no database stays selected
+     * @param string name
+     * @return boolean false when it did not exist
+     */
+    dropDb(name)
+    {
+        const pos = this._findDbIndex(name);
+        if(pos === -1)
+            return false;
+
+        if(this._selectedDb === this._dbs[pos])
+            this._selectedDb = null;
+
+        this._dbs.splice(pos, 1);
+        return true;
+    }
+
+    /**
      * Return selected db
      * @author Anderson Arruda < anderson@sysborg.com.br >
      * @version 1.0.0

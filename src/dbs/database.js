@@ -67,6 +67,54 @@ class database
     {
         return this._collectionCount;
     }
+
+    /**
+     * Names of the collections, in creation order
+     * @return array
+     */
+    listCollections()
+    {
+        return Object.keys(this._collections);
+    }
+
+    /**
+     * A collection by name, also when the name is not a valid property (or shadows a method)
+     * @param string name
+     * @return collection|undefined
+     */
+    getCollection(name)
+    {
+        return this._collections.hasOwnProperty(name) ? this._collections[name] : undefined;
+    }
+
+    /**
+     * Removes a collection and its documents
+     * @param string name
+     * @return boolean false when it did not exist
+     */
+    dropCollection(name)
+    {
+        if(!this._collections.hasOwnProperty(name))
+            return false;
+
+        delete this._collections[name];
+        this._collectionCount--;
+        return true;
+    }
+
+    /**
+     * Number of documents per collection
+     * @return object {name, documents, collections: [{name, documents}]}
+     */
+    getStats()
+    {
+        const collections = this.listCollections().map(name => ({ name, documents: this._collections[name].count() }));
+        return {
+            name: this._name,
+            documents: collections.reduce((total, item) => total + item.documents, 0),
+            collections
+        };
+    }
 }
 
 module.exports = database;

@@ -59,4 +59,41 @@ describe('SORLA databases and collections', () => {
         expect(items.last.n).to.equal(2);
         expect(items.all.length).to.equal(2);
     });
+
+    it('lists, inspects and drops collections', () => {
+        const srla = new sorla();
+        srla.useDb('inspect');
+        srla.db.createCollection('people');
+        srla.db.createCollection('orders');
+        srla.db.people.insertMany([{ n: 1 }, { n: 2 }]);
+        expect(srla.db.listCollections()).to.deep.equal(['people', 'orders']);
+        expect(srla.db.getStats()).to.deep.equal({ name: 'inspect', documents: 2, collections: [{ name: 'people', documents: 2 }, { name: 'orders', documents: 0 }] });
+        expect(srla.db.getCollection('people').count()).to.equal(2);
+        expect(srla.db.getCollection('missing')).to.equal(undefined);
+        expect(srla.db.dropCollection('orders')).to.equal(true);
+        expect(srla.db.dropCollection('orders')).to.equal(false);
+        expect(srla.db.listCollections()).to.deep.equal(['people']);
+        expect(srla.db.countCollections()).to.equal(1);
+        srla.db.createCollection('orders');
+        expect(srla.db.orders.count(), 'a dropped name can be created again, empty').to.equal(0);
+    });
+
+    it('"stats" and other common words stay valid collection names', () => {
+        const srla = new sorla();
+        srla.useDb('names');
+        for(const name of ['stats', 'users', 'logs', 'collections'])
+            expect(() => srla.db.createCollection(name), name).to.not.throw();
+        expect(srla.db.stats.count()).to.equal(0);
+    });
+
+    it('lists and drops databases', () => {
+        const srla = new sorla();
+        srla.useDb('one');
+        srla.useDb('two');
+        expect(srla.listDatabases()).to.deep.equal(['one', 'two']);
+        expect(srla.dropDb('two')).to.equal(true);
+        expect(srla.db).to.equal(null, 'the selected database was dropped');
+        expect(srla.dropDb('two')).to.equal(false);
+        expect(srla.listDatabases()).to.deep.equal(['one']);
+    });
 });
