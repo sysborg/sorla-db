@@ -38,5 +38,8 @@
     "jsdom-global": "^3.0.2",
     "mocha": "^10.2.0",
     "terser": "^5.27.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
