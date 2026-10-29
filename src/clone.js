@@ -58,6 +58,10 @@ function cloneError(value)
 
 function clone(value)
 {
+    // numbers, strings, booleans, null and undefined are their own copy (functions and symbols still throw)
+    if(value === null || (typeof value !== 'object' && typeof value !== 'function' && typeof value !== 'symbol'))
+        return value;
+
     if(typeof structuredClone === 'function')
         return structuredClone(value);
 

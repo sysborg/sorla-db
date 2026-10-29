@@ -2,7 +2,7 @@ const documents = require('../documents/document.js');
 const operatorsCheck = require('./operators.js');
 const emitter = require('../events.js');
 const { clone } = require('../clone.js');
-const { applyUpdate } = require('./update.js');
+const { applyUpdate, sameValue } = require('./update.js');
 const { compileSchema, ValidationError } = require('../schema/schema.js');
 
 class manipulation extends emitter {
@@ -269,12 +269,23 @@ class manipulation extends emitter {
     insertOne(document, callback) 
     {
         const id = this._insertDocument(document);
-        this._emitChange('insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+        this._emitChange('insert', { ids: [id], documents: this._eventCopies('insert', [this._documents.at(-1)._data]) });
 
         if(typeof callback === 'function')
             callback(id);
 
         return id;
+    }
+
+    /**
+     * Copies of documents for an event payload, only when someone listens (an empty list otherwise)
+     * @param string type
+     * @param array data
+     * @return array
+     */
+    _eventCopies(type, data)
+    {
+        return this._listening(type) ? data.map(value => this._copy(value)) : [];
     }
 
     /**
@@ -362,7 +373,7 @@ class manipulation extends emitter {
 
         const start = this._documents.length;
         const ids = prepared.map(data => this._store(data));
-        this._emitChange('insert', { ids, documents: this._documents.slice(start).map(doc => this._copy(doc._data)) });
+        this._emitChange('insert', { ids, documents: this._eventCopies('insert', this._documents.slice(start).map(doc => doc._data)) });
 
         if(typeof callback === 'function')
             callback(ids);
@@ -436,11 +447,11 @@ class manipulation extends emitter {
         {
             const data = applyUpdate(this._upsertBase(filter), update, helpers);
             const id = this._insertDocument(data);
-            this._emit(sink, 'insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+            this._emit(sink, 'insert', { ids: [id], documents: this._eventCopies('insert', [this._documents.at(-1)._data]) });
             return { matchedCount: 0, modifiedCount: 0, upsertedId: id };
         }
 
-        const modified = changes.filter(change => JSON.stringify(change.previous) !== JSON.stringify(change.next));
+        const modified = changes.filter(change => !sameValue(change.previous, change.next));
         for(const change of modified)
             this._documents[change.index] = new documents(change.next);
 
@@ -448,8 +459,8 @@ class manipulation extends emitter {
         {
             this._emit(sink, 'update', {
                 ids: modified.map(change => change.next._id),
-                documents: modified.map(change => this._copy(change.next)),
-                previous: modified.map(change => this._copy(change.previous))
+                documents: this._eventCopies('update', modified.map(change => change.next)),
+                previous: this._eventCopies('update', modified.map(change => change.previous))
             });
         }
 
@@ -516,7 +527,7 @@ class manipulation extends emitter {
                 return { matchedCount: 0, modifiedCount: 0, upsertedId: null };
 
             const id = this._insertDocument(replacement);
-            this._emit(sink, 'insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+            this._emit(sink, 'insert', { ids: [id], documents: this._eventCopies('insert', [this._documents.at(-1)._data]) });
             return { matchedCount: 0, modifiedCount: 0, upsertedId: id };
         }
 
@@ -526,11 +537,11 @@ class manipulation extends emitter {
 
         const next = { ...this._copy(replacement), _id: previous._id };
         this._validate(next);
-        const modified = JSON.stringify(previous) !== JSON.stringify(next);
+        const modified = !sameValue(previous, next);
         if(modified)
         {
             this._documents[index] = new documents(next);
-            this._emit(sink, 'replace', { ids: [next._id], documents: [this._copy(next)], previous: [this._copy(previous)] });
+            this._emit(sink, 'replace', { ids: [next._id], documents: this._eventCopies('replace', [next]), previous: this._eventCopies('replace', [previous]) });
         }
 
         return { matchedCount: 1, modifiedCount: modified ? 1 : 0, upsertedId: null };
@@ -675,7 +686,7 @@ class manipulation extends emitter {
         switch(name) {
             case 'insertOne': {
                 const id = this._insertDocument(spec.document);
-                sink('insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+                sink('insert', { ids: [id], documents: this._eventCopies('insert', [this._documents.at(-1)._data]) });
                 result.insertedCount++;
                 result.insertedIds[index] = id;
                 break;

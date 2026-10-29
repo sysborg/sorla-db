@@ -46,6 +46,17 @@ class emitter
     }
 
     /**
+     * Whether anyone listens to a change type (or to "change"): copies for the event payload are
+     * made only then
+     * @param string type
+     * @return boolean
+     */
+    _listening(type)
+    {
+        return (this._listeners.get(type)?.size ?? 0) + (this._listeners.get('change')?.size ?? 0) > 0;
+    }
+
+    /**
      * Emits the event and a generic "change" event with the same payload plus its type
      * @param string type
      * @param object payload

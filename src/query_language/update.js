@@ -32,11 +32,17 @@ function getPath(data, parts)
 }
 
 /**
- * Parent object of a path, creating missing objects on the way
+ * Parent object of a path in an update result, copying each object on the way first: the result
+ * shares the untouched parts with the stored version (stored data is never changed in place), so
+ * only the objects along a changed path are copied
+ * @param object result shallow copy of the document
+ * @param array parts
+ * @param boolean create missing objects
+ * @return object|null
  */
-function parentOf(data, parts, create)
+function writableParent(result, parts, create)
 {
-    let target = data;
+    let target = result;
     for(const part of parts.slice(0, -1))
     {
         if(!(part in target))
@@ -44,9 +50,14 @@ function parentOf(data, parts, create)
             if(!create) return null;
             target[part] = {};
         }
-
-        if(target[part] === null || typeof target[part] !== 'object')
+        else if(target[part] === null || typeof target[part] !== 'object')
+        {
             throw new Error(`Cannot create the field "${parts.join('.')}": "${part}" is not an object`);
+        }
+        else
+        {
+            target[part] = Array.isArray(target[part]) ? [...target[part]] : { ...target[part] };
+        }
 
         target = target[part];
     }
@@ -90,7 +101,8 @@ function validateUpdate(update)
 function applyUpdate(data, update, helpers)
 {
     validateUpdate(update);
-    const result = helpers.copy(data);
+    // copy on write: a shallow copy, nested objects are copied only along the changed paths
+    const result = { ...data };
 
     for(const [path, value] of Object.entries(update.$set ?? {}))
     {
@@ -98,13 +110,13 @@ function applyUpdate(data, update, helpers)
         if(value !== null && typeof value === 'object' && !helpers.validateKeys(Array.isArray(value) ? { value } : value))
             throw new Error('Invalid document keys');
 
-        parentOf(result, parts, true)[parts.at(-1)] = helpers.copy(value);
+        writableParent(result, parts, true)[parts.at(-1)] = helpers.copy(value);
     }
 
     for(const path of Object.keys(update.$unset ?? {}))
     {
         const parts = splitPath(path);
-        const parent = parentOf(result, parts, false);
+        const parent = writableParent(result, parts, false);
         if(parent && !Array.isArray(parent))
             delete parent[parts.at(-1)];
     }
@@ -119,7 +131,7 @@ function applyUpdate(data, update, helpers)
         if(current !== undefined && typeof current !== 'number')
             throw new Error(`Cannot $inc "${path}": it is not a number`);
 
-        parentOf(result, parts, true)[parts.at(-1)] = (current ?? 0) + amount;
+        writableParent(result, parts, true)[parts.at(-1)] = (current ?? 0) + amount;
     }
 
     for(const [path, value] of Object.entries(update.$push ?? {}))
@@ -135,7 +147,7 @@ function applyUpdate(data, update, helpers)
             if(item !== null && typeof item === 'object' && !helpers.validateKeys(Array.isArray(item) ? { item } : item))
                 throw new Error('Invalid document keys');
         }
-        parentOf(result, parts, true)[parts.at(-1)] = [...(current ?? []), ...items.map(helpers.copy)];
+        writableParent(result, parts, true)[parts.at(-1)] = [...(current ?? []), ...items.map(helpers.copy)];
     }
 
     for(const [path, condition] of Object.entries(update.$pull ?? {}))
@@ -158,10 +170,35 @@ function applyUpdate(data, update, helpers)
 
             return item === condition;
         };
-        parentOf(result, parts, false)[parts.at(-1)] = current.filter(item => !matches(item));
+        writableParent(result, parts, false)[parts.at(-1)] = current.filter(item => !matches(item));
     }
 
     return result;
 }
 
-module.exports = { applyUpdate, validateUpdate, UPDATE_OPERATORS };
+/**
+ * Whether two stored values are equal. Parts shared between two versions of a document are the
+ * same objects, so they are skipped at once.
+ * @param mixed a
+ * @param mixed b
+ * @return boolean
+ */
+function sameValue(a, b)
+{
+    if(a === b) return true;
+    if(a === null || b === null || typeof a !== 'object' || typeof b !== 'object')
+        return Number.isNaN(a) && Number.isNaN(b);
+
+    const tag = Object.prototype.toString.call(a);
+    if(tag !== Object.prototype.toString.call(b)) return false;
+    if(tag === '[object Date]') return a.getTime() === b.getTime();
+    if(tag === '[object RegExp]') return String(a) === String(b);
+    if(Array.isArray(a))
+        return a.length === b.length && a.every((item, i) => sameValue(item, b[i]));
+
+    const keys = Object.keys(a);
+    if(keys.length !== Object.keys(b).length) return false;
+    return keys.every(key => Object.prototype.hasOwnProperty.call(b, key) && sameValue(a[key], b[key]));
+}
+
+module.exports = { applyUpdate, validateUpdate, sameValue, UPDATE_OPERATORS };
