@@ -1,4 +1,5 @@
 const query = require('../query_language/query.js');
+const { bindForm } = require('../form/form.js');
 
 class collection extends query
 {
@@ -41,6 +42,18 @@ class collection extends query
     get all()
     {
         return this._documents;
+    }
+
+    /**
+     * Binds an HTML form to the collection: fields by name ("address.zip"), values converted with the
+     * schema, errors next to each field, insert or update on submit
+     * @param string|HTMLFormElement form
+     * @param object options {mode: 'insert'|'update', id, generate, validateOn, resetOnInsert, messages, onSuccess, onError}
+     * @return object controller {values, fill, validate, submit, load, reset, destroy}
+     */
+    bindForm(form, options = {})
+    {
+        return bindForm(this, form, options);
     }
 }
 

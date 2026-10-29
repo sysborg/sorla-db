@@ -82,6 +82,20 @@ class manipulation extends emitter {
     }
 
     /**
+     * Copy of a document with the schema defaults filled in (what insertOne would store)
+     * @param object document
+     * @return object
+     */
+    applyDefaults(document)
+    {
+        const data = this._copy(document);
+        if(this._schema)
+            this._schema.applyDefaults(data, value => this._copy(value));
+
+        return data;
+    }
+
+    /**
      * Throws a ValidationError when the data does not satisfy the schema
      * @param object data
      * @return void
