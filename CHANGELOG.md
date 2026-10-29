@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased]
+## [1.6.0] - 2026-10-29
 
 ### Added
 - `collection.bulkWrite(operations, { ordered })` with `insertOne`, `updateOne`, `updateMany`, `replaceOne`, `deleteOne` and `deleteMany`: MongoDB counts and ids, one change event per type at the end, `BulkWriteError` with `writeErrors` and the partial `result`.
