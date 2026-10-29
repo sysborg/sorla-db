@@ -169,6 +169,59 @@ sorla.db.dropCollection('updatedTags');
 sorla.db.getStats();              // { name, documents, collections: [{ name, documents }] }
 ```
 
+## Schema validation
+
+Give a collection a schema (a subset of JSON Schema) and every insert, update, replace and upsert must
+satisfy it:
+
+```
+sorla.db.createCollection('users', {
+  required: ['name', 'email'],
+  additionalProperties: false,
+  properties: {
+    name: { type: 'string', minLength: 2, maxLength: 80 },
+    email: { type: 'string', format: 'email' },
+    age: { type: ['integer', 'null'], minimum: 0 },
+    role: { enum: ['admin', 'user'], default: 'user' },
+    tags: { type: 'array', items: { type: 'string' }, uniqueItems: true },
+    createdAt: { type: 'date' },
+    address: {
+      type: 'object',
+      required: ['zip'],
+      properties: { zip: { type: 'string', pattern: '^\\d{5}-\\d{3}$' } }
+    }
+  }
+});
+
+try {
+  sorla.db.users.insertOne({ name: 'A', email: 'nope' });
+} catch(error) {
+  // error instanceof sorla.ValidationError
+  error.errors; // [{ path: 'name', rule: 'minLength', message: 'name must have at least 2 characters' },
+                //  { path: 'email', rule: 'format', message: 'email must be a valid email' }]
+}
+
+sorla.db.users.validate({ name: 'Ana' });   // { valid: false, errors: [...] } without storing (forms)
+sorla.db.users.setSchema(otherSchema);      // existing documents are not revalidated; null removes it
+```
+
+| Keyword | Notes |
+|---|---|
+| `type` | `string`, `number`, `integer`, `boolean`, `object`, `array`, `null`, several (`['string', 'null']`), and `date` for Date objects |
+| `required`, `properties`, `additionalProperties` | `additionalProperties` can be `false` or a schema; `_id` is always allowed |
+| `enum`, `const` | |
+| `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum` | numbers |
+| `minLength`, `maxLength`, `pattern`, `format` | strings; lengths count characters; formats: `email`, `date`, `date-time`, `uri` |
+| `items`, `minItems`, `maxItems`, `uniqueItems` | arrays |
+| `default` | filled on insert and upsert when the field is missing, also in nested objects |
+| `title`, `description`, `examples`, `$schema`, `$id` | annotations |
+
+Every problem is reported at once, with its field path (`address.zip`, `tags[1]`). `insertMany` and
+`updateMany` stay atomic: one invalid document stores nothing. Unknown keywords, types and formats throw
+when the schema is set, so a typo like `tpye` is not silently ignored.
+
+A function also works as a schema: `doc => doc.total >= 0 || 'total must not be negative'`.
+
 ## Find Operators
 
 ### $and

@@ -3,6 +3,16 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [Unreleased]
+
+### Added
+- Schema validation with a subset of JSON Schema: `type` (plus `date`), `required`, `properties`, `additionalProperties`, `enum`, `const`, numeric ranges, `minLength` / `maxLength` / `pattern` / `format` (email, date, date-time, uri), `items` / `minItems` / `maxItems` / `uniqueItems`, and `default`. Function schemas are supported too.
+- `sorla.ValidationError` with `errors: [{ path, rule, message }]`.
+- `collection.validate(doc)`, `collection.setSchema(schema)` and `collection.getSchema()`.
+
+### Fixed
+- The schema given to `createCollection(name, schema)` was never stored (the setter checked an undefined variable).
+
 ## [1.3.0] - 2026-10-29
 
 ### Added
