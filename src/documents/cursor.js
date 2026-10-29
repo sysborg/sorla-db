@@ -2,7 +2,7 @@
  * @class Cursor
  * @description Cursor class is used to represent the cursor in the document, adding some extra capabilities to object.
  */
-
+const { clone } = require('../clone.js');
 
 class cursor {
     /**
@@ -44,8 +44,8 @@ class cursor {
      * @return array
      */
     toArray() {
-        // the documents are proxies, which structuredClone cannot copy: clone their data
-        return this._data.map(doc => structuredClone(doc._data));
+        // the documents are proxies, which cannot be cloned: copy their data
+        return this._data.map(doc => clone(doc._data));
     }
 
     /**

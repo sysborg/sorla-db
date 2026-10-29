@@ -1,5 +1,6 @@
 const query = require('../query_language/query.js');
 const { bindForm } = require('../form/form.js');
+const { clone } = require('../clone.js');
 
 class collection extends query
 {
@@ -23,7 +24,7 @@ class collection extends query
      */
     get first()
     {
-        return structuredClone(this._documents[0]._data);
+        return this._documents.length ? clone(this._documents[0]._data) : null;
     }
 
     /**
@@ -32,7 +33,7 @@ class collection extends query
      */
     get last()
     {
-        return structuredClone(this._documents[this._documents.length - 1]._data);
+        return this._documents.length ? clone(this._documents[this._documents.length - 1]._data) : null;
     }
 
     /**

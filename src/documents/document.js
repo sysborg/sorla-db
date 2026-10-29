@@ -1,4 +1,5 @@
 const utils = require('../utils');
+const { clone } = require('../clone.js');
 
 /**
  * A stored document. Fields read like a plain object, including "a.b" paths. Stored documents are
@@ -60,7 +61,7 @@ class documents
      */
     clone()
     {
-        const cloned = new documents(structuredClone(this._data));
+        const cloned = new documents(clone(this._data));
         cloned._cloned = true;
         return cloned;
     }

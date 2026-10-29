@@ -1,6 +1,7 @@
 const documents = require('../documents/document.js');
 const operatorsCheck = require('./operators.js');
 const emitter = require('../events.js');
+const { clone } = require('../clone.js');
 const { applyUpdate } = require('./update.js');
 const { compileSchema, ValidationError } = require('../schema/schema.js');
 
@@ -165,9 +166,12 @@ class manipulation extends emitter {
     _copy(document)
     {
         try {
-            return structuredClone(document);
+            return clone(document);
         } catch(error) {
-            throw new Error('Documents can only contain cloneable values (no functions or DOM nodes)');
+            if(error && error.name === 'DataCloneError')
+                throw new Error('Documents can only contain cloneable values (no functions or DOM nodes)');
+
+            throw error;
         }
     }
 

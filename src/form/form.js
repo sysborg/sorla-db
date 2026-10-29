@@ -8,6 +8,8 @@
  * Only DOM APIs reachable from the form itself are used (form.ownerDocument), so it works in
  * iframes and with jsdom.
  */
+const { clone } = require('../clone.js');
+
 const DEFAULTS = {
     mode: 'insert',
     id: undefined,
@@ -372,11 +374,16 @@ function bindForm(collection, target, options = {})
             const before = getPath(loaded, name);
             if(value === EMPTY)
             {
-                if(before !== undefined) (update.$unset ??= {})[name] = '';
+                if(before !== undefined)
+                {
+                    if(!update.$unset) update.$unset = {};
+                    update.$unset[name] = '';
+                }
             }
             else if(!same(value, before))
             {
-                (update.$set ??= {})[name] = value;
+                if(!update.$set) update.$set = {};
+                update.$set[name] = value;
             }
         }
         return update;
@@ -388,7 +395,7 @@ function bindForm(collection, target, options = {})
     function candidate()
     {
         if(opts.mode === 'insert') return collection.applyDefaults(values());
-        const next = structuredClone(loaded ?? {});
+        const next = clone(loaded ?? {});
         for(const [name, elements] of controlsByName(form))
         {
             const value = readControl(elements, schema && schemaFor(schema, name));
