@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [Unreleased]
+
+### Added
+- `collection.bulkWrite(operations, { ordered })` with `insertOne`, `updateOne`, `updateMany`, `replaceOne`, `deleteOne` and `deleteMany`: MongoDB counts and ids, one change event per type at the end, `BulkWriteError` with `writeErrors` and the partial `result`.
+- An `_id` index: filters on `_id` (`{ _id: x }`, `$eq`, `$in`) find documents without scanning, in `find`, `findOne`, `count`, updates, `replaceOne`, deletes and `bulkWrite`.
+- `sort(spec, { nulls: 'first' | 'last' })`, and collection options: `createCollection(name, schema, { nulls })`, `collection.setOptions()` / `getOptions()`.
+- `cursor.ids()`, `cursor.forEach()` and iteration (`for...of`) over copies.
+- `collection.stream(url, options)`: rows loaded in blocks from a Server-Sent Events endpoint (`meta`, `rows`, `ops`, `delete`, `end`, `abort` events), with custom headers and POST (fetch transport) or `EventSource`, reconnection with `Last-Event-ID`, upserts by `_id`, progress and error callbacks.
+- `collection.connect(url, options)` and `sorla.connect(url, options)`: WebSocket request / reply (`load()` pages, `request()`), pushed `rows` / `ops` / `delete` applied to the collection, queued requests while connecting, reconnection with back off, heartbeats and timeouts.
+- `sorla.readEventStream(body, onEvent)`: the text/event-stream parser.
+- Regular expressions inside `$in` / `$nin`.
+
+### Changed
+- **Missing and null values sort last** in both directions by default (they came first in ascending order, as in MongoDB). Use `{ nulls: 'first' }` per sort or per collection for the previous ascending order.
+- `find()` no longer copies every matching document: the cursor keeps references and copies a document only when it is read (`next`, `toArray`, `first`, `last`, iteration). Results are the same copies as before, and a cursor is a snapshot of the moment `find()` ran.
+
 ## [1.5.1] - 2026-10-29
 
 ### Fixed

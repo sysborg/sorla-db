@@ -157,6 +157,126 @@ export type SortSpec = Record<string, 1 | -1>;
 export interface SortOptions {
     /** Intl.Collator options plus the locale, e.g. { locale: 'pt-BR', sensitivity: 'base', numeric: true } */
     collation?: Intl.CollatorOptions & { locale?: string };
+    /** Missing and null values: last (default, from the collection options) or first, in both directions. */
+    nulls?: 'first' | 'last';
+}
+
+export interface CollectionOptions {
+    /** Default of sort({ nulls }): 'last' (default) or 'first'. */
+    nulls?: 'first' | 'last';
+}
+
+export type BulkWriteOperation =
+    | { insertOne: { document: Document } }
+    | { updateOne: { filter: Query; update: UpdateFilter; upsert?: boolean } }
+    | { updateMany: { filter: Query; update: UpdateFilter; upsert?: boolean } }
+    | { replaceOne: { filter: Query; replacement: Document; upsert?: boolean } }
+    | { deleteOne: { filter: Query } }
+    | { deleteMany: { filter: Query } };
+
+export interface BulkWriteResult {
+    insertedCount: number;
+    matchedCount: number;
+    modifiedCount: number;
+    deletedCount: number;
+    upsertedCount: number;
+    /** Operation index => _id */
+    insertedIds: Record<number, unknown>;
+    upsertedIds: Record<number, unknown>;
+}
+
+/** Thrown by bulkWrite: name is 'BulkWriteError'. The operations before the error stay applied. */
+export interface BulkWriteError extends Error {
+    writeErrors: Array<{ index: number; operation: BulkWriteOperation; error: Error }>;
+    result: BulkWriteResult;
+}
+
+export interface StreamState {
+    /** Rows received in "rows" events. */
+    loaded: number;
+    /** From the "meta" or "end" event, null until then. */
+    total: number | null;
+    blocks: number;
+    /** Rows (or messages) that could not be applied. */
+    errors: number;
+    lastEventId: string | null;
+    finished: boolean;
+}
+
+export interface StreamOptions {
+    /** 'fetch' (default: headers, POST, Node 18+) or 'eventsource' (the browser's EventSource). */
+    transport?: 'fetch' | 'eventsource';
+    headers?: Record<string, string>;
+    method?: string;
+    body?: BodyInit;
+    credentials?: RequestCredentials;
+    /** EventSource transport: send cookies to another origin. */
+    withCredentials?: boolean;
+    /** 'upsert' (default): rows with an existing _id replace it; 'insert': duplicated ids are errors. */
+    mode?: 'upsert' | 'insert';
+    /** Delay before reconnecting in ms (default 1000; the server can change it with "retry:"). */
+    retry?: number;
+    /** Failed connections in a row before giving up (default 10). */
+    maxRetries?: number;
+    /** Resume a stream: sent as Last-Event-ID on the first request. */
+    lastEventId?: string | null;
+    onProgress?: (state: StreamState) => void;
+    onError?: (error: Error) => void;
+    /** Events with other names. */
+    onMessage?: (event: { type: string; data: string; id: string | null }) => void;
+    fetch?: typeof fetch;
+    EventSource?: typeof EventSource;
+}
+
+export interface StreamController {
+    /** Resolves on "end" or close(), rejects on "abort", HTTP 4xx or too many failures. */
+    readonly done: Promise<StreamState>;
+    readonly state: StreamState;
+    close(): void;
+}
+
+export interface ConnectOptions {
+    /** Store loaded and pushed rows in the collection (default: true for collection.connect, false for sorla.connect). */
+    apply?: boolean;
+    mode?: 'upsert' | 'insert';
+    /** Reconnect after a drop (default true), with exponential back off from retry (500 ms) up to maxRetry (30 s). */
+    reconnect?: boolean;
+    retry?: number;
+    maxRetry?: number;
+    maxRetries?: number;
+    /** Ping interval in ms (default 25000, 0 disables); no message for two intervals reconnects. */
+    heartbeat?: number;
+    /** Reply timeout in ms (default 30000, 0 disables). */
+    timeout?: number;
+    protocols?: string | string[];
+    WebSocket?: typeof WebSocket;
+}
+
+export interface LoadParams {
+    offset?: number;
+    limit?: number;
+    query?: Query;
+    sort?: SortSpec;
+    [key: string]: unknown;
+}
+
+export interface LoadResult {
+    rows: Document[];
+    hasMore?: boolean;
+    total?: number;
+}
+
+export declare class Remote {
+    readonly state: 'connecting' | 'open' | 'closed';
+    /** {type: 'load', id, ...params} → {type: 'reply', id, rows, hasMore, total} */
+    load(params?: LoadParams): Promise<LoadResult>;
+    /** Any request: {type, id, ...payload} → {type: 'reply', id, ...} or {type: 'error', id, message} */
+    request(type: string, payload?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    send(type: string, payload?: Record<string, unknown>): void;
+    close(): void;
+    on(event: 'open' | 'close' | 'error' | 'push' | 'message', listener: (event: Record<string, unknown>) => void): () => void;
+    once(event: 'open' | 'close' | 'error' | 'push' | 'message', listener: (event: Record<string, unknown>) => void): () => void;
+    off(event: string, listener?: (event: Record<string, unknown>) => void): void;
 }
 
 export interface StoredDocument {
@@ -170,12 +290,16 @@ export declare class Cursor {
     hasNext(): boolean;
     next(): StoredDocument;
     reset(): void;
-    /** Data of the first document, null when empty. */
+    /** Copy of the first document, null when empty. */
     first(): Document | null;
-    /** Data of the last document, null when empty. */
+    /** Copy of the last document, null when empty. */
     last(): Document | null;
-    /** Plain copies of the documents. */
+    /** Plain copies of the documents. Only the documents read are copied. */
     toArray(): Document[];
+    /** The _id of each document, without copying anything. */
+    ids(): unknown[];
+    forEach(fn: (document: Document, index: number) => void): void;
+    [Symbol.iterator](): Iterator<Document>;
     sort(spec: SortSpec, options?: SortOptions): this;
     skip(count: number): this;
     /** 0 means no limit. */
@@ -204,6 +328,14 @@ export declare class Collection {
     deleteOne(filter: Query): DeleteResult;
     /** deleteMany({}) empties the collection. */
     deleteMany(filter: Query): DeleteResult;
+    /** Several writes, one change event per type; filters on _id use the index. Throws a BulkWriteError. */
+    bulkWrite(operations: BulkWriteOperation[], options?: { ordered?: boolean }): BulkWriteResult;
+    setOptions(options: CollectionOptions): this;
+    getOptions(): Required<CollectionOptions>;
+    /** Loads rows sent in blocks by a Server-Sent Events endpoint. */
+    stream(url: string, options?: StreamOptions): StreamController;
+    /** WebSocket to a backend: pages, requests and pushed changes. */
+    connect(url: string, options?: ConnectOptions): Remote;
     /** Returns a function that unsubscribes. "change" receives every type. */
     on(event: ChangeType | 'change', listener: (event: ChangeEvent) => void): () => void;
     once(event: ChangeType | 'change', listener: (event: ChangeEvent) => void): () => void;
@@ -228,7 +360,7 @@ export interface DatabaseStats {
 export declare class Database {
     readonly name: string;
     /** Inserts, updates and replaces must satisfy the schema; a ValidationError is thrown otherwise. */
-    createCollection(name: string, validationSchema?: JSONSchema | SchemaFunction | null): void;
+    createCollection(name: string, validationSchema?: JSONSchema | SchemaFunction | null, options?: CollectionOptions): void;
     countCollections(): number;
     listCollections(): string[];
     /** Any collection by name, also when the name shadows a method. */
@@ -240,6 +372,10 @@ export declare class Database {
 
 declare class sorla {
     static ValidationError: typeof ValidationError;
+    /** WebSocket not tied to a collection: load() returns the rows without storing them. */
+    static connect(url: string, options?: ConnectOptions): Remote;
+    /** text/event-stream parser. */
+    static readEventStream(body: ReadableStream<Uint8Array>, onEvent: (event: { type: string; data: string; id: string | null }) => void, onRetry?: (ms: number) => void): Promise<void>;
     constructor();
     /** The selected database. Collections are properties of it: sorla.db.people */
     readonly db: Database & Record<string, Collection>;

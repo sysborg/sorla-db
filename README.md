@@ -77,13 +77,20 @@ Documents returned by the collection are read-only: assigning a field throws.
 ```
 const cursor = window.sorla.db.updatedTags.find({ age: { $gte: 18 } });
 cursor.length;              // number of documents
-cursor.first();             // data of the first one, null when empty
-cursor.last();              // data of the last one, null when empty
+cursor.ids();               // their _id, without copying anything
+cursor.first();             // copy of the first one, null when empty
+cursor.last();              // copy of the last one, null when empty
 cursor.toArray();           // plain copies
+for(const doc of cursor) {} // copies, one at a time (also cursor.forEach)
 while(cursor.hasNext()) cursor.next();
 ```
 
-`findOne()` returns the data of the first matching document, or `null`.
+`findOne()` returns a copy of the first matching document, or `null`.
+
+A cursor holds references to the stored documents, not copies: matching, `sort()`, `skip()`,
+`limit()`, `length` and `ids()` copy nothing, and a document is copied only when you read it. Reading
+one page of a million matches copies one page. Stored documents are never changed in place (updates
+store new objects), so a cursor keeps showing the documents as they were when `find()` ran.
 
 ## Sorting
 
@@ -92,13 +99,24 @@ window.sorla.db.updatedTags.find({}).sort({ age: -1, name: 1 }).toArray();
 ```
 
 `1` is ascending and `-1` descending, and `"a.b"` paths work. `sort()` returns the cursor. Values of
-different types follow MongoDB's order: missing and null, numbers, strings, objects, arrays,
-booleans, dates. Strings compare by code point. Pass a collation to compare by language rules,
-using the `Intl.Collator` options:
+different types follow MongoDB's order: numbers, strings, objects, arrays, booleans, dates. Strings
+compare by code point. Pass a collation to compare by language rules, using the `Intl.Collator` options:
 
 ```
 cursor.sort({ name: 1 }, { collation: { locale: 'pt-BR', sensitivity: 'base', numeric: true } });
 ```
+
+Missing and `null` values go **last**, in both directions (like a spreadsheet). Choose per sort or
+per collection:
+
+```
+cursor.sort({ due: 1 }, { nulls: 'first' });                // this sort
+db.createCollection('tasks', null, { nulls: 'first' });     // default of the collection
+db.tasks.setOptions({ nulls: 'last' });
+```
+
+Before 1.6, missing and null values came first in ascending order (MongoDB's order); pass
+`{ nulls: 'first' }` for that order in ascending sorts.
 
 ## Paging and projection
 
@@ -134,6 +152,29 @@ operator fails (for example `$inc` on a text field) no document changes. `_id` c
 
 `replaceOne(filter, document)` replaces the whole document and keeps its `_id`.
 
+## Bulk writes
+
+```
+collection.bulkWrite([
+  { insertOne: { document: { _id: 'p9', name: 'Ana' } } },
+  { updateOne: { filter: { _id: 'p1' }, update: { $set: { qty: 3 } } } },
+  { updateMany: { filter: { active: false }, update: { $set: { archived: true } } } },
+  { replaceOne: { filter: { _id: 'p2' }, replacement: { name: 'Bia' }, upsert: true } },
+  { deleteOne: { filter: { _id: 'p3' } } },
+  { deleteMany: { filter: { qty: 0 } } }
+]);
+// { insertedCount, matchedCount, modifiedCount, deletedCount, upsertedCount, insertedIds, upsertedIds }
+```
+
+Filters on `_id` (`{ _id: x }`, `{ _id: { $in: [...] } }`) use the collection's index, here and in
+`find`, `updateOne`, `deleteOne` and the others, so updating 50 000 documents by `_id` takes
+milliseconds instead of a full scan per document. `bulkWrite` emits one change event per type at the
+end, with every document of that type.
+
+Like MongoDB, the first failing operation stops the batch (`{ ordered: false }` runs the others),
+the operations before it stay applied, and a `BulkWriteError` is thrown with `writeErrors`
+(`[{ index, operation, error }]`) and the partial `result`.
+
 ## Deleting and counting
 
 ```
@@ -157,6 +198,87 @@ off();
 
 `insertMany` and `updateMany` emit one event for the whole operation, and nothing is emitted when nothing
 changed. A listener that throws does not undo or interrupt the write.
+
+## Loading from a backend: Server-Sent Events and WebSocket
+
+Both are alternatives to a plain `fetch`, not replacements: use them when there are many rows to
+load, or when the server should push changes.
+
+### Server-Sent Events: many rows in blocks
+
+```
+const loading = db.orders.stream('/api/orders/stream', {
+  headers: { Authorization: `Bearer ${token}` },     // fetch transport (default)
+  onProgress: ({ loaded, total }) => bar.value = loaded / (total ?? loaded)
+});
+const { loaded } = await loading.done;               // loading.close() stops early
+```
+
+The server answers with `text/event-stream` and sends JSON in named events:
+
+```
+event: meta
+data: {"total": 1000000}
+
+id: 1
+event: rows
+data: [{"_id": 1, "name": "..."}, ... 5000 rows ...]
+
+id: 2
+event: rows
+data: [...]
+
+event: end
+data: {}
+```
+
+| Event | Data | Effect |
+|---|---|---|
+| `meta` | `{ total }` | the number of rows to expect, for progress |
+| `rows` | `[docs]` or `{ rows }` | one `bulkWrite`: rows whose `_id` exists are replaced, the others inserted |
+| `ops` | `[bulkWrite operations]` | any change |
+| `delete` | `[ids]` or `{ ids }` | removes documents |
+| `end` | `{ total? }` | done: `done` resolves and the client does not reconnect |
+| `abort` | `{ message }` | the server gives up: `done` rejects |
+
+When the connection drops, the client reconnects (after `retry` ms, 1000 by default, or what the
+server sent with `retry:`) and sends the last `id:` it received as the `Last-Event-ID` header, so the
+server can continue with the next block. Rows sent twice are replaced, not duplicated. A row that does
+not satisfy the schema is skipped and counted in `state.errors` (`onError` receives the
+`BulkWriteError`); the rest of its block is stored. HTTP 4xx answers and `abort` stop the stream;
+other failures are retried up to `maxRetries` (10) times in a row.
+
+[`example/sse_server.js`](example/sse_server.js) is a reference endpoint in plain Node (100 000 rows in
+blocks of 5 000, resuming from `Last-Event-ID`, waiting for `drain` when the client reads slowly).
+
+`transport: 'eventsource'` uses the browser's `EventSource` instead (GET only, no custom headers,
+cookies with `withCredentials`).
+
+### WebSocket: pages and live changes
+
+```
+const remote = db.orders.connect('wss://api.example.com/orders');
+const page = await remote.load({ offset: 0, limit: 200, query: { status: 'open' }, sort: { due: 1 } });
+// page = { rows, hasMore, total }; the rows are stored in db.orders too
+remote.on('push', ({ message }) => console.log('server changed', message.type));
+remote.close();
+```
+
+Messages are JSON objects with a `type`:
+
+| Direction | Message |
+|---|---|
+| client → server | `{ type: 'load', id, offset, limit, query, sort }`, any `request(type, payload)`, `{ type: 'ping' }` |
+| server → client | `{ type: 'reply', id, rows, hasMore, total }` (or any reply), `{ type: 'error', id, message }` |
+| server → client (push) | `{ type: 'rows', rows }`, `{ type: 'ops', ops }`, `{ type: 'delete', ids }`: applied to the collection |
+
+Requests made while connecting are sent when the socket opens. After a drop the client reconnects with
+exponential back off (500 ms up to 30 s); requests still waiting for a reply are rejected, so retry
+them. A ping is sent every 25 s (`heartbeat`), and a connection that stays silent for two heartbeats
+is replaced. Replies time out after 30 s (`timeout`).
+
+`sorla.connect(url, options)` opens a connection not tied to a collection: `load()` only returns the
+rows, for example for a data grid that stores them itself.
 
 ## Databases and collections
 
@@ -447,6 +569,8 @@ const results = window.sorla.db.updatedTags.find({
   age: { $in: [36, 44]}
 });
 ```
+
+Regular expressions in the list match strings, like MongoDB: `{ name: { $in: [/^ana/i, 'Bia'] } }`.
 
 ### $nin
 $nin operator is opposite of $in operator, returns only documents that the values doesn't match with any of the query.
