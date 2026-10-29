@@ -277,3 +277,53 @@ describe('SORLA WebSocket connection', () => {
         expect(remote.state).to.equal('closed', 'no message for two heartbeats');
     });
 });
+
+describe('SORLA 1.7.1: stream apply hook and copy-on-write updates', () => {
+    it('sorla.stream hands each block to options.apply instead of a collection', async () => {
+        class FakeEventSource {
+            constructor() { this.listeners = {}; this.readyState = 1; FakeEventSource.last = this; }
+            addEventListener(type, fn) { (this.listeners[type] = this.listeners[type] || []).push(fn); }
+            emit(type, data, id = '') { (this.listeners[type] || []).forEach(fn => fn({ data: JSON.stringify(data), lastEventId: id })); }
+            close() { this.readyState = 2; }
+        }
+        const received = [];
+        const controller = sorla.stream('/rows', { transport: 'eventsource', EventSource: FakeEventSource, apply: (type, data) => received.push([type, data.length ?? data]) });
+        FakeEventSource.last.emit('rows', block(0, 4), '1');
+        FakeEventSource.last.emit('delete', ['r1']);
+        FakeEventSource.last.emit('end', {});
+        const state = await controller.done;
+        expect(received).to.deep.equal([['rows', 4], ['delete', 1]]);
+        expect(state.loaded).to.equal(4);
+        expect(() => sorla.stream('/rows', { transport: 'eventsource', EventSource: FakeEventSource })).to.throw('needs options.apply');
+    });
+
+    it('updates copy only the changed path: older versions and cursors are untouched', () => {
+        const c = collection();
+        c.insertOne({ _id: 'a', n: 1, address: { city: 'Rio', geo: { lat: 1 } }, tags: ['x'] });
+        const before = c.find({ _id: 'a' });
+        const storedBefore = c.all[0]._data;
+        c.updateOne({ _id: 'a' }, { $set: { 'address.geo.lat': 2 }, $push: { tags: 'y' } });
+        const storedAfter = c.all[0]._data;
+        expect(storedBefore.address.geo.lat).to.equal(1);
+        expect(storedBefore.tags).to.deep.equal(['x']);
+        expect(before.first().address.geo.lat).to.equal(1);
+        expect(storedAfter.address.geo.lat).to.equal(2);
+        expect(storedAfter.tags).to.deep.equal(['x', 'y']);
+        expect(storedAfter.address.city).to.equal('Rio');
+        c.updateOne({ _id: 'a' }, { $set: { n: 5 } });
+        expect(c.all[0]._data.address).to.equal(storedAfter.address, 'untouched parts are shared, not copied');
+        expect(c.updateOne({ _id: 'a' }, { $set: { n: 5 } }).modifiedCount).to.equal(0, 'same value is no change');
+    });
+
+    it('event payloads carry copies when someone listens', () => {
+        const c = collection();
+        c.insertOne({ _id: 'a', n: 1 });
+        const events = [];
+        c.on('update', event => events.push(event));
+        c.updateOne({ _id: 'a' }, { $set: { n: 2 } });
+        expect(events[0].documents).to.deep.equal([{ _id: 'a', n: 2 }]);
+        expect(events[0].previous).to.deep.equal([{ _id: 'a', n: 1 }]);
+        events[0].documents[0].n = 99;
+        expect(c.findOne({ _id: 'a' }).n).to.equal(2);
+    });
+});

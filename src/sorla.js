@@ -1,7 +1,7 @@
 const database = require('./dbs/database.js');
 const { ValidationError } = require('./schema/schema.js');
 const { connect } = require('./sync/socket.js');
-const { readEventStream } = require('./sync/sse.js');
+const { readEventStream, stream } = require('./sync/sse.js');
 
 class sorla{
     /**
@@ -152,6 +152,8 @@ sorla.ValidationError = ValidationError;
 sorla.connect = (url, options = {}) => connect(null, url, options);
 // text/event-stream parser, for your own SSE handling
 sorla.readEventStream = readEventStream;
+// Server-Sent Events stream handled by your code: sorla.stream(url, {apply(type, data), ...})
+sorla.stream = (url, options = {}) => stream(null, url, options);
 
 module.exports = sorla;
 if(typeof window !== 'undefined')

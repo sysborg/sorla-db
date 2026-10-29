@@ -14,6 +14,9 @@
  *
  * Two transports: 'fetch' (default; custom headers such as Authorization, POST bodies, works in
  * Node 18+) and 'eventsource' (the browser's EventSource: GET only, cookies, reconnects by itself).
+ *
+ * options.apply(type, data) replaces the default handling of rows / ops / delete, for code that
+ * stores the data itself (sorla.stream(url, {apply}) works without a collection).
  */
 const { applyChange, rowCount } = require('./apply.js');
 
@@ -105,6 +108,12 @@ function stream(collection, url, options = {})
     if(transport !== 'fetch' && transport !== 'eventsource')
         throw new Error('options.transport must be "fetch" or "eventsource"');
 
+    const apply = options.apply ?? ((type, data) => applyChange(collection, type, data, mode));
+    if(typeof apply !== 'function')
+        throw new Error('options.apply must be a function');
+    if(!collection && !options.apply)
+        throw new Error('A stream without a collection needs options.apply(type, data)');
+
     let retry = options.retry ?? 1000;
     const state = { loaded: 0, total: null, blocks: 0, errors: 0, lastEventId: options.lastEventId ?? null, finished: false };
     let resolveDone;
@@ -153,7 +162,7 @@ function stream(collection, url, options = {})
             case 'ops':
             case 'delete':
                 try {
-                    applyChange(collection, event.type, data, mode);
+                    apply(event.type, data);
                 } catch(error) {
                     // a BulkWriteError: the valid rows of the block are stored
                     state.errors += error.writeErrors ? error.writeErrors.length : 1;
