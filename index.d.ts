@@ -27,6 +27,51 @@ export type Query = {
 };
 
 /** Exclusion ({ email: 0 }) or inclusion ({ name: 1 }); only _id can mix both. */
+export type SchemaType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null' | 'date';
+
+/** Subset of JSON Schema used to validate documents ("date" accepts Date objects). */
+export interface JSONSchema {
+    type?: SchemaType | SchemaType[];
+    properties?: Record<string, JSONSchema>;
+    required?: string[];
+    additionalProperties?: boolean | JSONSchema;
+    items?: JSONSchema;
+    enum?: unknown[];
+    const?: unknown;
+    /** Applied on insert and upsert when the field is missing. */
+    default?: unknown;
+    minimum?: number;
+    maximum?: number;
+    exclusiveMinimum?: number;
+    exclusiveMaximum?: number;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    format?: 'email' | 'date' | 'date-time' | 'uri';
+    minItems?: number;
+    maxItems?: number;
+    uniqueItems?: boolean;
+    title?: string;
+    description?: string;
+    examples?: unknown[];
+    $schema?: string;
+    $id?: string;
+}
+
+export type SchemaFunction = (document: Document) => true | false | string | Array<string | Partial<ValidationIssue>> | null | undefined;
+
+export interface ValidationIssue {
+    /** Field path: 'email', 'address.zip', 'tags[1]'; '' for the whole document. */
+    path: string;
+    rule: string;
+    message: string;
+}
+
+export declare class ValidationError extends Error {
+    name: 'ValidationError';
+    errors: ValidationIssue[];
+}
+
 export type Projection = Record<string, 0 | 1>;
 
 export type UpdateFilter = {
@@ -118,6 +163,11 @@ export declare class Collection {
     on(event: ChangeType | 'change', listener: (event: ChangeEvent) => void): () => void;
     once(event: ChangeType | 'change', listener: (event: ChangeEvent) => void): () => void;
     off(event: ChangeType | 'change', listener?: (event: ChangeEvent) => void): void;
+    /** Checks a document against the schema without storing it. */
+    validate(document: Document): { valid: boolean; errors: ValidationIssue[] };
+    /** Existing documents are not revalidated. null removes the schema. */
+    setSchema(schema: JSONSchema | SchemaFunction | null): this;
+    getSchema(): JSONSchema | SchemaFunction | null;
 }
 
 export interface DatabaseStats {
@@ -128,7 +178,8 @@ export interface DatabaseStats {
 
 export declare class Database {
     readonly name: string;
-    createCollection(name: string, validationSchema?: unknown): void;
+    /** Inserts, updates and replaces must satisfy the schema; a ValidationError is thrown otherwise. */
+    createCollection(name: string, validationSchema?: JSONSchema | SchemaFunction | null): void;
     countCollections(): number;
     listCollections(): string[];
     /** Any collection by name, also when the name shadows a method. */
@@ -139,6 +190,7 @@ export declare class Database {
 }
 
 declare class sorla {
+    static ValidationError: typeof ValidationError;
     constructor();
     /** The selected database. Collections are properties of it: sorla.db.people */
     readonly db: Database & Record<string, Collection>;
