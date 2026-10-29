@@ -3,7 +3,6 @@
  * @description Cursor class is used to represent the cursor in the document, adding some extra capabilities to object.
  */
 
-const documents = require('../documents/document.js');
 
 class cursor {
     /**
@@ -45,7 +44,8 @@ class cursor {
      * @return array
      */
     toArray() {
-        return structuredClone(this._data);
+        // the documents are proxies, which structuredClone cannot copy: clone their data
+        return this._data.map(doc => structuredClone(doc._data));
     }
 
     /**
@@ -63,7 +63,7 @@ class cursor {
      * @return mixed
      */
     first() {
-        return this._data[0]._data;
+        return this._data.length ? this._data[0]._data : null;
     }
 
     /**
@@ -72,30 +72,45 @@ class cursor {
      * @return mixed
      */
     last() {
-        return this._data[this._data.length - 1];
+        return this._data.length ? this._data[this._data.length - 1]._data : null;
     }
 
     /**
      * @method sort
-     * @description Sort the cursor using collection
-     * @param json sortQuery
-     * @return void
+     * @description Sort the documents of the cursor, like MongoDB: {age: -1, name: 1}
+     * Values of different types follow MongoDB's order: missing and null, numbers, strings,
+     * objects, arrays, booleans, dates. Strings compare by code point unless a collation is given.
+     * @param json sortQuery field => 1 (ascending) or -1 (descending), "a.b" paths allowed
+     * @param json options {collation: {locale, sensitivity, numeric...}} (Intl.Collator options)
+     * @return cursor
      */
-    sort(sortQuery) {
-        const queryDoc = new documents(sortQuery);
-        this._data.sort((a, b) => {
-            for(const key of Object.keys(sortQuery))
-            {
-                const ascending = queryDoc[key] === 1;
-                if(a[key] > b[key])
-                    return ascending ? 1 : -1;
+    sort(sortQuery, options = {}) {
+        if(sortQuery === null || typeof sortQuery !== 'object' || Array.isArray(sortQuery))
+            throw new Error('The sort query must be an object like {field: 1}');
 
-                if(a[key] < b[key])
-                    return ascending ? -1 : 1;
+        const keys = Object.keys(sortQuery);
+        for(const key of keys)
+        {
+            if(sortQuery[key] !== 1 && sortQuery[key] !== -1)
+                throw new Error(`Sort direction of "${key}" must be 1 or -1`);
+        }
+
+        const collation = options.collation
+            ? new Intl.Collator(options.collation.locale, options.collation)
+            : null;
+
+        this._data.sort((a, b) => {
+            for(const key of keys)
+            {
+                const result = compareValues(a[key], b[key], collation);
+                if(result !== 0)
+                    return result * sortQuery[key];
             }
 
             return 0;
         });
+
+        return this;
     }
 
     /**
@@ -139,6 +154,55 @@ class cursor {
 
         this._data.push(element);
     }
+}
+
+/**
+ * Rank of a value in MongoDB's comparison order
+ * @param mixed value
+ * @return number
+ */
+function typeRank(value) {
+    if(value === undefined || value === null) return 0;
+    if(typeof value === 'number') return 1;
+    if(typeof value === 'string') return 2;
+    // toString instead of instanceof: Dates from another realm (iframes, workers, vm) still count
+    if(Object.prototype.toString.call(value) === '[object Date]') return 6;
+    if(Array.isArray(value)) return 4;
+    if(typeof value === 'object') return 3;
+    if(typeof value === 'boolean') return 5;
+    return 7;
+}
+
+/**
+ * Compares two field values for sorting
+ * @param mixed a
+ * @param mixed b
+ * @param Intl.Collator|null collation
+ * @return number -1, 0 or 1
+ */
+function compareValues(a, b, collation) {
+    const rankA = typeRank(a);
+    const rankB = typeRank(b);
+    if(rankA !== rankB) return rankA < rankB ? -1 : 1;
+
+    switch(rankA) {
+        case 0:
+            return 0;
+        case 2:
+            if(collation) return Math.sign(collation.compare(a, b));
+            break;
+        case 3:
+        case 4:
+            a = JSON.stringify(a);
+            b = JSON.stringify(b);
+            break;
+        case 6:
+            a = a.getTime();
+            b = b.getTime();
+            break;
+    }
+
+    return a < b ? -1 : a > b ? 1 : 0;
 }
 
 module.exports = cursor;

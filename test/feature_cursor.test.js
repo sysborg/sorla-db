@@ -12,11 +12,7 @@ describe('SORLA cursor', () => {
         people = srla.db.people;
         for(const [name, age] of [['Carla', 42], ['Ana', 25], ['Bruno', 31]])
             people.insertOne({ name, age, email: `${name.toLowerCase()}@mail.com` });
-        // projection logs every removed property
-        jest.spyOn(console, 'log').mockImplementation(() => {});
     });
-
-    afterAll(() => jest.restoreAllMocks());
 
     it('iterates with hasNext/next and can be reset', () => {
         const cursor = people.find({});
@@ -56,29 +52,80 @@ describe('SORLA cursor', () => {
         expect(cursor.length).to.equal(4);
     });
 
-    // ---- known bugs: these document current behavior and will start failing once fixed
-
-    it.failing('sorts by a number ascending (cursor.js/document.js circular require)', () => {
+    it('sorts by a number ascending and returns the cursor for chaining', () => {
         const cursor = people.find({});
-        cursor.sort({ age: 1 });
-        expect(cursor.first().name).to.equal('Ana');
+        expect(cursor.sort({ age: 1 })).to.equal(cursor);
+        expect(cursor.toArray().map(doc => doc.name)).to.deep.equal(['Ana', 'Bruno', 'Carla']);
     });
 
-    it.failing('sorts by several fields descending', () => {
-        const cursor = people.find({});
-        cursor.sort({ age: -1, name: 1 });
+    it('sorts by several fields and directions', () => {
+        const cursor = people.find({}).sort({ age: -1, name: 1 });
         expect(cursor.first().name).to.equal('Carla');
+        expect(cursor.last().name).to.equal('Ana');
     });
 
-    it.failing('toArray returns plain objects (structuredClone of a Proxy)', () => {
-        expect(people.find({}).toArray().map(doc => doc.name)).to.deep.equal(['Carla', 'Ana', 'Bruno']);
+    it('toArray returns plain copies', () => {
+        const rows = people.find({}).toArray();
+        expect(rows.map(doc => doc.name)).to.deep.equal(['Carla', 'Ana', 'Bruno']);
+        rows[0].name = 'changed';
+        expect(people.findOne({ name: 'Carla' })).to.not.equal(null);
     });
 
-    it.failing('findOne returns null when nothing matches', () => {
+    it('findOne returns null when nothing matches, first() and last() of an empty cursor too', () => {
         expect(people.findOne({ name: 'Nobody' })).to.equal(null);
+        expect(people.find({ name: 'Nobody' }).first()).to.equal(null);
+        expect(people.find({ name: 'Nobody' }).last()).to.equal(null);
     });
 
+    it('rejects invalid sort specifications', () => {
+        expect(() => people.find({}).sort('age')).to.throw('must be an object');
+        expect(() => people.find({}).sort({ age: 'asc' })).to.throw('must be 1 or -1');
+    });
 
     it.todo('projection with 1 keeps only the listed fields');
     it.todo('skip() and limit()');
+});
+
+describe('SORLA cursor sort order', () => {
+    let items;
+
+    beforeAll(() => {
+        const srla = new sorla();
+        srla.useDb('sortOrder');
+        srla.db.createCollection('items');
+        items = srla.db.items;
+        const rows = [
+            { n: 1, v: 'b' }, { n: 2, v: 10 }, { n: 3, v: null }, { n: 4 }, { n: 5, v: true },
+            { n: 6, v: 'B' }, { n: 7, v: 2 }, { n: 8, v: 'á' }, { n: 9, v: new Date('2026-01-01') },
+            { n: 10, v: false }, { n: 11, v: 'a' }, { n: 12, v: new Date('2025-01-01') }, { n: 13, v: 'item 10' }, { n: 14, v: 'item 2' }
+        ];
+        items.insertMany(rows);
+    });
+
+    const order = (spec, options) => items.find({}).sort(spec, options).toArray().map(doc => doc.n);
+
+    it('orders mixed types like MongoDB: missing/null, numbers, strings, booleans, dates', () => {
+        // missing and null keep insertion order (stable sort), strings by code point
+        expect(order({ v: 1 })).to.deep.equal([3, 4, 7, 2, 6, 11, 1, 13, 14, 8, 10, 5, 12, 9]);
+    });
+
+    it('descending reverses the order', () => {
+        expect(order({ v: -1 })).to.deep.equal([9, 12, 5, 10, 8, 14, 13, 1, 11, 6, 2, 7, 3, 4]);
+    });
+
+    it('collation sorts strings by language rules', () => {
+        const strings = items.find({ v: { $in: ['b', 'B', 'á', 'a', 'item 10', 'item 2'] } })
+            .sort({ v: 1 }, { collation: { locale: 'pt-BR', sensitivity: 'base', numeric: true } })
+            .toArray().map(doc => doc.v);
+        expect(strings.slice(0, 2).sort()).to.deep.equal(['a', 'á'].sort());
+        expect(strings.slice(-2)).to.deep.equal(['item 2', 'item 10']);
+    });
+
+    it('sorts by a nested path', () => {
+        const srla = new sorla();
+        srla.useDb('nestedSort');
+        srla.db.createCollection('c');
+        srla.db.c.insertMany([{ n: 1, a: { b: 3 } }, { n: 2, a: { b: 1 } }, { n: 3, a: {} }]);
+        expect(srla.db.c.find({}).sort({ 'a.b': 1 }).toArray().map(doc => doc.n)).to.deep.equal([3, 2, 1]);
+    });
 });
