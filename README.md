@@ -3,23 +3,33 @@ A simple and temporary database focused to use in browser environment that will 
 
 This idea is from our founder #andmarruda that give this idea and alot of this idea are developed by him.
 
-To create a minify file run
-```
-node index.js
-```
-
-To test the environment using jest run...
-Don`t forget to install the dev dependecies before, using:
+## Installation
 
 ```
-npm install --only=dev
+npm install sorla-db
 ```
 
-```
-npm test
+```js
+// Node / bundlers
+const sorla = require('sorla-db');
+// or
+import sorla from 'sorla-db';
 ```
 
-Soon some documentations....
+```html
+<!-- browser, 9.5 kB: registers window.sorla -->
+<script src="https://cdn.jsdelivr.net/npm/sorla-db@1/dist/sorla.min.js"></script>
+```
+
+TypeScript declarations are included.
+
+## Development
+
+```
+npm install
+npm test          # jest
+npm run build     # dist/sorla.min.js
+```
 
 Prohibited characters $ and .,
 $ because is used to call operators and . because uses to search key inside a object's object
@@ -40,6 +50,54 @@ window.sorla.db.updatedTags.insertMany([
     age: 36
   }
 ]);
+```
+
+## Inserting documents
+
+`insertOne` stores a **copy** of the document and returns its `_id` (a uuid v4 when the document
+has none). `insertMany` validates the whole array first, so an invalid document never leaves the
+collection with half of the batch, and returns the ids.
+
+```
+const id = window.sorla.db.updatedTags.insertOne({ name: 'Ana', nickname: null });
+const ids = window.sorla.db.updatedTags.insertMany([{ name: 'Bia' }, { _id: 'custom', name: 'Caio' }]);
+```
+
+- `null` values are allowed, at any depth
+- a duplicated `_id` throws
+- keys with `$` or `.` throw, at any depth
+- values must be cloneable (no functions or DOM nodes)
+
+Documents returned by the collection are read-only: assigning a field throws.
+
+## Reading results
+
+`find()` returns a cursor:
+
+```
+const cursor = window.sorla.db.updatedTags.find({ age: { $gte: 18 } });
+cursor.length;              // number of documents
+cursor.first();             // data of the first one, null when empty
+cursor.last();              // data of the last one, null when empty
+cursor.toArray();           // plain copies
+while(cursor.hasNext()) cursor.next();
+```
+
+`findOne()` returns the data of the first matching document, or `null`.
+
+## Sorting
+
+```
+window.sorla.db.updatedTags.find({}).sort({ age: -1, name: 1 }).toArray();
+```
+
+`1` is ascending and `-1` descending, and `"a.b"` paths work. `sort()` returns the cursor. Values of
+different types follow MongoDB's order: missing and null, numbers, strings, objects, arrays,
+booleans, dates. Strings compare by code point. Pass a collation to compare by language rules,
+using the `Intl.Collator` options:
+
+```
+cursor.sort({ name: 1 }, { collation: { locale: 'pt-BR', sensitivity: 'base', numeric: true } });
 ```
 
 ## Find Operators
