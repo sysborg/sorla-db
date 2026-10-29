@@ -1,7 +1,10 @@
 const utils = require('../utils');
-const cursor = require('./cursor');
-const manipulation = require('../query_language/manipulation');
 
+/**
+ * A stored document. Fields read like a plain object, including "a.b" paths. Stored documents are
+ * read-only from the outside; find() returns copies (clone()) whose fields projection can remove.
+ * This module requires no other document or query module, which keeps the require graph acyclic.
+ */
 class documents
 {
     constructor(object)
@@ -9,24 +12,23 @@ class documents
         this._data = object;
         this._utils = new utils();
         this._cloned = false;
-        this._deleteReceiver = null;
 
         return new Proxy(this, {
-            deleteProperty: (target, prop, receiver) => {
-                if(target._cloned && target._deleteReceiver instanceof cursor)
+            deleteProperty: (target, prop) => {
+                if(target._cloned && prop in target._data)
                 {
-                    if(prop in target._data)
-                    {
-                        console.log('2', prop);
-                        delete target._data[prop];
-                        return true;
-                    }
-
-                    return false;
+                    delete target._data[prop];
+                    return true;
                 }
+
+                return false;
             },
 
             get: (target, prop) => {
+                // symbols (Symbol.toPrimitive, Symbol.iterator...) belong to the wrapper, not to the data
+                if(typeof prop !== 'string')
+                    return target[prop];
+
                 if(prop.indexOf('.') > -1)
                     return target._utils.getDotData(target._data, prop);
 
@@ -36,19 +38,15 @@ class documents
                 return target[prop];
             },
 
-            set: (target, prop, value, receiver) => {
-                if(!(prop in target._data) && !target.hasOwnProperty(prop))
-                    return false;
-
-                if(target.hasOwnProperty(prop) && ['_data', '_utils'].indexOf(prop) === -1){
-                    target[prop] = value;
+            set: (target, prop, value) => {
+                if(prop === '_cloned')
+                {
+                    target._cloned = value;
                     return true;
                 }
 
-                if(receiver instanceof manipulation || target._cloned && receiver instanceof cursor) {
-                    target._data[prop] = value;
-                    return true;
-                }
+                if(typeof prop === 'string' && prop in target._data)
+                    throw new Error(`Document fields are read-only ("${prop}"), change documents through the collection`);
 
                 return false;
             }
@@ -69,18 +67,16 @@ class documents
 
     /**
      * @method delete prop
-     * @description Delete a property from the document
+     * @description Delete a property from a copy returned by find() (used by projection)
      * @param string prop
-     * @param cursor receiver
      * @return boolean
      */
-    deleteProp(prop, receiver)
+    deleteProp(prop)
     {
-        this._deleteReceiver = receiver;
-        if(this._cloned)
-            return Reflect.deleteProperty(this, prop);
+        if(!this._cloned)
+            return false;
 
-        return false;
+        return Reflect.deleteProperty(this, prop);
     }
 }
 

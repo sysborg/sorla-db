@@ -25,16 +25,17 @@ class utils
      */
     getDotData(data, field)
     {
-        let fields = field.split('.');
+        let value = data;
+        for(const part of field.split('.'))
+        {
+            // a missing step means the field does not exist (it used to return the parent object)
+            if(value === null || typeof value !== 'object' || !(part in value))
+                return undefined;
 
-        fields.forEach(field => {
-            if(typeof data[field] !== 'undefined')
-            {
-                data = data[field];
-            }
-        });
+            value = value[part];
+        }
 
-        return data;
+        return value;
     }
 }
 
