@@ -122,47 +122,8 @@ class cursor {
      * @return cursor
      */
     sort(sortQuery, options = {}) {
-        if(sortQuery === null || typeof sortQuery !== 'object' || Array.isArray(sortQuery))
-            throw new Error('The sort query must be an object like {field: 1}');
-
-        const keys = Object.keys(sortQuery);
-        for(const key of keys)
-        {
-            if(sortQuery[key] !== 1 && sortQuery[key] !== -1)
-                throw new Error(`Sort direction of "${key}" must be 1 or -1`);
-        }
-
-        const nulls = options.nulls ?? this._options.nulls ?? 'last';
-        if(nulls !== 'first' && nulls !== 'last')
-            throw new Error('options.nulls must be "first" or "last"');
-
-        const collation = options.collation
-            ? new Intl.Collator(options.collation.locale, options.collation)
-            : null;
-
-        // blanks are placed outside the direction: "last" means last for ascending and descending
-        const blankOrder = nulls === 'last' ? 1 : -1;
-        this._data.sort((a, b) => {
-            for(const key of keys)
-            {
-                const valueA = a[key];
-                const valueB = b[key];
-                const blankA = valueA === undefined || valueA === null;
-                const blankB = valueB === undefined || valueB === null;
-                if(blankA || blankB)
-                {
-                    if(blankA && blankB) continue;
-                    return blankA ? blankOrder : -blankOrder;
-                }
-
-                const result = compareValues(valueA, valueB, collation);
-                if(result !== 0)
-                    return result * sortQuery[key];
-            }
-
-            return 0;
-        });
-
+        // the documents are proxies: doc["a.b"] reads nested paths
+        this._data.sort(sortComparator(sortQuery, { nulls: this._options.nulls, ...options }, (doc, key) => doc[key]));
         return this;
     }
 
@@ -289,6 +250,56 @@ class cursor {
 }
 
 /**
+ * Comparator for a sort specification, shared by cursors and live queries
+ * @param json sortQuery field => 1 or -1
+ * @param json options {nulls: 'last' | 'first', collation}
+ * @param function read (item, key) => value of the field
+ * @return function (a, b) => number
+ */
+function sortComparator(sortQuery, options, read) {
+    if(sortQuery === null || typeof sortQuery !== 'object' || Array.isArray(sortQuery))
+        throw new Error('The sort query must be an object like {field: 1}');
+
+    const keys = Object.keys(sortQuery);
+    for(const key of keys)
+    {
+        if(sortQuery[key] !== 1 && sortQuery[key] !== -1)
+            throw new Error(`Sort direction of "${key}" must be 1 or -1`);
+    }
+
+    const nulls = options.nulls ?? 'last';
+    if(nulls !== 'first' && nulls !== 'last')
+        throw new Error('options.nulls must be "first" or "last"');
+
+    const collation = options.collation
+        ? new Intl.Collator(options.collation.locale, options.collation)
+        : null;
+
+    // blanks are placed outside the direction: "last" means last for ascending and descending
+    const blankOrder = nulls === 'last' ? 1 : -1;
+    return (a, b) => {
+        for(const key of keys)
+        {
+            const valueA = read(a, key);
+            const valueB = read(b, key);
+            const blankA = valueA === undefined || valueA === null;
+            const blankB = valueB === undefined || valueB === null;
+            if(blankA || blankB)
+            {
+                if(blankA && blankB) continue;
+                return blankA ? blankOrder : -blankOrder;
+            }
+
+            const result = compareValues(valueA, valueB, collation);
+            if(result !== 0)
+                return result * sortQuery[key];
+        }
+
+        return 0;
+    };
+}
+
+/**
  * The given top level fields of an object (shallow, the caller copies)
  * @param object data
  * @param Set fields
@@ -354,3 +365,4 @@ function compareValues(a, b, collation) {
 }
 
 module.exports = cursor;
+module.exports.sortComparator = sortComparator;
