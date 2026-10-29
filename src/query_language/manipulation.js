@@ -2,6 +2,7 @@ const documents = require('../documents/document.js');
 const operatorsCheck = require('./operators.js');
 const emitter = require('../events.js');
 const { applyUpdate } = require('./update.js');
+const { compileSchema, ValidationError } = require('../schema/schema.js');
 
 class manipulation extends emitter {
     constructor(validationSchema = null) {
@@ -24,34 +25,72 @@ class manipulation extends emitter {
     }
 
     /**
-     * Valid and set validation schema for collection
+     * Sets the validation schema of the collection (JSON Schema subset or a function).
+     * Documents inserted, updated or replaced afterwards must satisfy it; existing ones are not checked.
      * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
-     * @param validationSchema
+     * @version 1.4.0
+     * @param object|function|null validationSchema
      * @return void
     **/
     set validationSchema(validationSchema)
     {
-        if(typeof schemaValidation === 'undefined' || schemaValidation === null)
-            return;
-
-        if(['object', 'function'].indexOf(typeof schemaValidation) == -1)
+        if(validationSchema === null || typeof validationSchema === 'undefined')
         {
-            throw new Error('Invalid schema validation');
+            this._schema = null;
+            return;
         }
 
-        this._validationSchema = validationSchema;  
+        if(['object', 'function'].indexOf(typeof validationSchema) === -1 || Array.isArray(validationSchema))
+            throw new Error('The validation schema must be an object (JSON Schema) or a function');
+
+        this._schema = compileSchema(validationSchema);
     }
 
     /**
-     * Validate data
+     * The schema given to the collection, or null
+     * @return object|function|null
+     */
+    get validationSchema()
+    {
+        return this._schema ? this._schema.source : null;
+    }
+
+    /**
+     * @param object|function|null schema
+     * @return this
+     */
+    setSchema(schema)
+    {
+        this.validationSchema = schema;
+        return this;
+    }
+
+    getSchema()
+    {
+        return this.validationSchema;
+    }
+
+    /**
+     * Checks a document against the schema without storing it (e.g. to validate a form)
+     * @param object document
+     * @return object {valid, errors: [{path, rule, message}]}
+     */
+    validate(document)
+    {
+        const errors = this._schema ? this._schema.validate(document) : [];
+        return { valid: errors.length === 0, errors };
+    }
+
+    /**
+     * Throws a ValidationError when the data does not satisfy the schema
      * @param object data
-     * @return boolean
+     * @return void
      */
     _validate(data) 
     {
-        //under construction
-        return true;
+        const errors = this._schema ? this._schema.validate(data) : [];
+        if(errors.length)
+            throw new ValidationError(errors);
     }
 
     /**
@@ -144,27 +183,53 @@ class manipulation extends emitter {
      */
     _insertDocument(document)
     {
+        return this._store(this._prepare(document));
+    }
+
+    /**
+     * Copy of a document ready to be stored: _id, schema defaults, keys and schema checked
+     * @param object document
+     * @param Set reserved ids taken by the same batch
+     * @return object
+     */
+    _prepare(document, reserved = null)
+    {
         if(!this._isDocument(document))
             throw new Error('Invalid document type');
 
         if(!this._validateKeys(document))
             throw new Error('Invalid document keys');
 
+        const taken = id => this._ids().has(id) || (reserved !== null && reserved.has(id));
         const data = this._copy(document);
         if(typeof data._id === 'undefined')
         {
             do {
                 data._id = this._generateKey();
-            } while(this._ids().has(data._id));
+            } while(taken(data._id));
         }
-        else if(this._ids().has(data._id))
+        else if(taken(data._id))
         {
             throw new Error(`Duplicate _id "${data._id}"`);
         }
 
-        if(!this._validate(data))
-            throw new Error('Invalid document');
+        if(this._schema)
+        {
+            this._schema.applyDefaults(data, value => this._copy(value));
+            if(!this._validateKeys(data))
+                throw new Error('Invalid document keys');
+        }
 
+        this._validate(data);
+        return data;
+    }
+
+    /**
+     * @param object data prepared document
+     * @return mixed the _id
+     */
+    _store(data)
+    {
         this._documents.push(new documents(data));
         this._ids().add(data._id);
         return data._id;
@@ -183,23 +248,16 @@ class manipulation extends emitter {
         if(!Array.isArray(documents) || !documents.every(document => this._isDocument(document)))
             throw new Error('Documents must be an array of objects');
 
-        const given = new Set();
-        for(const document of documents)
-        {
-            if(!this._validateKeys(document))
-                throw new Error('Invalid document keys');
-
-            if(typeof document._id === 'undefined')
-                continue;
-
-            if(given.has(document._id) || this._ids().has(document._id))
-                throw new Error(`Duplicate _id "${document._id}"`);
-
-            given.add(document._id);
-        }
+        // prepare (and validate) the whole batch before storing anything
+        const reserved = new Set();
+        const prepared = documents.map(document => {
+            const data = this._prepare(document, reserved);
+            reserved.add(data._id);
+            return data;
+        });
 
         const start = this._documents.length;
-        const ids = documents.map(document => this._insertDocument(document));
+        const ids = prepared.map(data => this._store(data));
         this._emitChange('insert', { ids, documents: this._documents.slice(start).map(doc => this._copy(doc._data)) });
 
         if(typeof callback === 'function')
@@ -269,7 +327,9 @@ class manipulation extends emitter {
             if(!this._operators.matches(doc, filter))
                 continue;
 
-            changes.push({ index: i, previous: doc._data, next: applyUpdate(doc._data, update, helpers) });
+            const next = applyUpdate(doc._data, update, helpers);
+            this._validate(next);
+            changes.push({ index: i, previous: doc._data, next });
             if(!many) break;
         }
 
@@ -357,6 +417,7 @@ class manipulation extends emitter {
             throw new Error('The _id field cannot be changed');
 
         const next = { ...this._copy(replacement), _id: previous._id };
+        this._validate(next);
         const modified = JSON.stringify(previous) !== JSON.stringify(next);
         if(modified)
         {

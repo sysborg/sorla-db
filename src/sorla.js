@@ -1,4 +1,5 @@
 const database = require('./dbs/database.js');
+const { ValidationError } = require('./schema/schema.js');
 
 class sorla{
     /**
@@ -142,6 +143,9 @@ class sorla{
         return this._selectedDb;
     }
 }
+
+// thrown when a document does not satisfy the collection schema: error.errors = [{path, rule, message}]
+sorla.ValidationError = ValidationError;
 
 module.exports = sorla;
 if(typeof window !== 'undefined')
