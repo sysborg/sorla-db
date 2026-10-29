@@ -4,10 +4,33 @@ const cursor = require('../documents/cursor.js');
 
 class query extends manipulation
 {
-    constructor(validationSchema)
+    constructor(validationSchema, options = {})
     {
         super(validationSchema);
         this._operators = new operators();
+        this.setOptions(options);
+    }
+
+    /**
+     * Collection options
+     * @param object options {nulls: 'last' (default) | 'first'}: where sort() puts missing and null values
+     * @return this
+     */
+    setOptions(options = {})
+    {
+        if(options === null || typeof options !== 'object')
+            throw new Error('Collection options must be an object');
+
+        if(typeof options.nulls !== 'undefined' && options.nulls !== 'first' && options.nulls !== 'last')
+            throw new Error('options.nulls must be "first" or "last"');
+
+        this._options = { nulls: 'last', ...(this._options ?? {}), ...options };
+        return this;
+    }
+
+    getOptions()
+    {
+        return { ...this._options };
     }
 
     /**
@@ -20,7 +43,9 @@ class query extends manipulation
             return this._documents.length;
 
         // counts without copying the documents
-        return this._documents.reduce((total, doc) => total + (this._operators.matches(doc, query) ? 1 : 0), 0);
+        let total = 0;
+        this._eachMatch(query, () => { total++; });
+        return total;
     }
 
     /**
@@ -32,17 +57,15 @@ class query extends manipulation
      */
     _deepFind(query, projection, single=false)
     {
+        // the cursor keeps references to the stored documents: copies are made only for the
+        // documents that are read (stored data is never changed in place, so this is a snapshot)
         const finded = [];
-        for(const doc of this._documents)
-        {
-            if(!this._operators.matches(doc, query))
-                continue;
+        this._eachMatch(query, doc => {
+            finded.push(doc);
+            return !single;
+        });
 
-            finded.push(doc.clone());
-            if(single) break;
-        }
-
-        return new cursor(finded, projection);
+        return new cursor(finded, projection, this._options);
     }
 
     /**

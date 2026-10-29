@@ -219,16 +219,15 @@ class operators {
             if(!Array.isArray(queries))
                 throw new Error('The $in operator must be an array');
 
-            if(Array.isArray(doc_value))
-            {
-                for(const value of queries)
-                {
-                    if(doc_value.indexOf(value) > -1)
-                        return true;
-                }
-            }
+            // like MongoDB, regular expressions in the list match strings
+            const matchesOne = value => queries.some(query => this.isRegExp(query)
+                ? typeof value === 'string' && new RegExp(query.source, query.flags.replace(/[gy]/g, '')).test(value)
+                : query === value);
 
-            return  queries.indexOf(doc_value) > -1;
+            if(Array.isArray(doc_value) && doc_value.some(matchesOne))
+                return true;
+
+            return matchesOne(doc_value);
         }
     }
 

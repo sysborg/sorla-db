@@ -42,17 +42,18 @@ class database
     /**
      * Sets a new collection in the database
      * @param string name
-     * @param object validationSchema - in construction
+     * @param object|function validationSchema JSON Schema subset or a function (optional)
+     * @param object options {nulls: 'last' | 'first'}, see collection.setOptions()
      * @return void
      */
-    createCollection(name, validationSchema)
+    createCollection(name, validationSchema, options = {})
     {
         if(this._collections.hasOwnProperty(name) || typeof this[name] !== 'undefined')
         {
             throw new Error('Collection already exists');
         }
 
-        this._collections[name] = new collection(validationSchema);
+        this._collections[name] = new collection(validationSchema, options);
         this._collectionCount++;
 
         //creates _id as a index unique

@@ -11,9 +11,9 @@ class collection extends query
      * @param object validationSchema - in construction
      * @return void
     **/
-    constructor(validationSchema)
+    constructor(validationSchema, options = {})
     {
-        super(validationSchema);
+        super(validationSchema, options);
         this._documents = [];
         this._indexes = [];
     }
@@ -56,6 +56,7 @@ class collection extends query
     {
         return bindForm(this, form, options);
     }
+
 }
 
 module.exports =  collection;

@@ -124,13 +124,33 @@ describe('SORLA cursor sort order', () => {
 
     const order = (spec, options) => items.find({}).sort(spec, options).toArray().map(doc => doc.n);
 
-    it('orders mixed types like MongoDB: missing/null, numbers, strings, booleans, dates', () => {
+    it('orders mixed types like MongoDB: numbers, strings, booleans, dates, then missing/null', () => {
         // missing and null keep insertion order (stable sort), strings by code point
-        expect(order({ v: 1 })).to.deep.equal([3, 4, 7, 2, 6, 11, 1, 13, 14, 8, 10, 5, 12, 9]);
+        expect(order({ v: 1 })).to.deep.equal([7, 2, 6, 11, 1, 13, 14, 8, 10, 5, 12, 9, 3, 4]);
     });
 
-    it('descending reverses the order', () => {
+    it('descending reverses the values; missing/null stay last', () => {
         expect(order({ v: -1 })).to.deep.equal([9, 12, 5, 10, 8, 14, 13, 1, 11, 6, 2, 7, 3, 4]);
+    });
+
+    it('nulls: "first" puts missing/null first in both directions', () => {
+        expect(order({ v: 1 }, { nulls: 'first' })).to.deep.equal([3, 4, 7, 2, 6, 11, 1, 13, 14, 8, 10, 5, 12, 9]);
+        expect(order({ v: -1 }, { nulls: 'first' })).to.deep.equal([3, 4, 9, 12, 5, 10, 8, 14, 13, 1, 11, 6, 2, 7]);
+        expect(() => order({ v: 1 }, { nulls: 'middle' })).to.throw('"first" or "last"');
+    });
+
+    it('the collection option sets the default, a sort option overrides it', () => {
+        const srla = new sorla();
+        srla.useDb('nullsOption');
+        srla.db.createCollection('c', null, { nulls: 'first' });
+        srla.db.c.insertMany([{ n: 1, v: 2 }, { n: 2 }, { n: 3, v: 1 }]);
+        const sorted = options => srla.db.c.find({}).sort({ v: 1 }, options).toArray().map(doc => doc.n);
+        expect(sorted()).to.deep.equal([2, 3, 1]);
+        expect(sorted({ nulls: 'last' })).to.deep.equal([3, 1, 2]);
+        srla.db.c.setOptions({ nulls: 'last' });
+        expect(sorted()).to.deep.equal([3, 1, 2]);
+        expect(srla.db.c.getOptions()).to.deep.equal({ nulls: 'last' });
+        expect(() => srla.db.c.setOptions({ nulls: 'up' })).to.throw('"first" or "last"');
     });
 
     it('collation sorts strings by language rules', () => {
@@ -146,6 +166,6 @@ describe('SORLA cursor sort order', () => {
         srla.useDb('nestedSort');
         srla.db.createCollection('c');
         srla.db.c.insertMany([{ n: 1, a: { b: 3 } }, { n: 2, a: { b: 1 } }, { n: 3, a: {} }]);
-        expect(srla.db.c.find({}).sort({ 'a.b': 1 }).toArray().map(doc => doc.n)).to.deep.equal([3, 2, 1]);
+        expect(srla.db.c.find({}).sort({ 'a.b': 1 }).toArray().map(doc => doc.n)).to.deep.equal([2, 1, 3]);
     });
 });
