@@ -72,6 +72,51 @@ export declare class ValidationError extends Error {
     errors: ValidationIssue[];
 }
 
+export interface BindFormOptions {
+    /** "insert" (default) runs insertOne; "update" loads `id` and runs updateOne with the form fields. */
+    mode?: 'insert' | 'update';
+    id?: unknown;
+    /** Build labeled fields from the collection JSON schema. */
+    generate?: boolean;
+    /** When fields are validated before submit (default "blur"). */
+    validateOn?: 'blur' | 'input' | 'submit';
+    /** Clear the form after an insert (default true). */
+    resetOnInsert?: boolean;
+    /** Keep the browser validation bubbles (default false: the form gets novalidate). */
+    nativeValidation?: boolean;
+    /** Translate or rewrite messages; return null to keep the default one. */
+    messages?: (issue: ValidationIssue) => string | null | undefined;
+    onSuccess?: (result: FormResult) => void;
+    onError?: (errors: ValidationIssue[]) => void;
+    /** Document used to resolve a selector (defaults to the global document). */
+    document?: Document;
+}
+
+export interface FormResult {
+    ok: true;
+    mode: 'insert' | 'update';
+    id: unknown;
+    document: Document | null;
+    /** update only: whether something changed. */
+    modified?: boolean;
+}
+
+export interface FormController {
+    readonly form: HTMLFormElement;
+    readonly mode: 'insert' | 'update';
+    readonly id: unknown;
+    /** Current values, converted with the schema. */
+    values(): Document;
+    fill(document: Document): void;
+    /** Shows every error and returns them. */
+    validate(): ValidationIssue[];
+    submit(): FormResult | { ok: false; errors: ValidationIssue[] };
+    /** Loads a document and switches to update mode. */
+    load(id: unknown): Document;
+    reset(): void;
+    destroy(): void;
+}
+
 export type Projection = Record<string, 0 | 1>;
 
 export type UpdateFilter = {
@@ -168,6 +213,10 @@ export declare class Collection {
     /** Existing documents are not revalidated. null removes the schema. */
     setSchema(schema: JSONSchema | SchemaFunction | null): this;
     getSchema(): JSONSchema | SchemaFunction | null;
+    /** Copy of the document with the schema defaults filled in. */
+    applyDefaults(document: Document): Document;
+    /** Binds an HTML form to the collection (browser). */
+    bindForm(form: string | HTMLFormElement, options?: BindFormOptions): FormController;
 }
 
 export interface DatabaseStats {
