@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased]
+## [1.3.0] - 2026-10-29
 
 ### Added
 - `updateOne` / `updateMany` with `$set`, `$unset`, `$inc`, `$push` (`$each`) and `$pull`, `"a.b"` paths and `{ upsert }`.
