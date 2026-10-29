@@ -4,7 +4,7 @@ class operators {
      */
     constructor() {
         this._logicalOperators = ['$or', '$and', '$not', '$nor'];
-        this._comparisonOperators = ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin'];
+        this._comparisonOperators = ['$lt', '$lte', '$gt', '$gte', '$eq', '$ne', '$in', '$nin', '$exists', '$regex', '$options'];
     }
 
     /**
@@ -94,12 +94,28 @@ class operators {
      * @return boolean
      */
     matchesCondition(value, condition) {
+        if(this.isRegExp(condition))
+            return this.matchesRegex(value, condition);
+
         if(!this.isOperatorObject(condition))
             return this.$eq(value, condition);
+
+        if('$options' in condition && !('$regex' in condition))
+            throw new Error('The $options operator must be used with $regex');
 
         for(const operator of Object.keys(condition)) {
             if(operator === '$not') {
                 if(this.matchesCondition(value, condition[operator]))
+                    return false;
+
+                continue;
+            }
+
+            if(operator === '$options')
+                continue;
+
+            if(operator === '$regex') {
+                if(!this.matchesRegex(value, this.toRegExp(condition.$regex, condition.$options)))
                     return false;
 
                 continue;
@@ -116,6 +132,45 @@ class operators {
     }
 
     /**
+     * Whether a value is a RegExp (also from another realm: iframes, workers, vm contexts)
+     * @param mixed value
+     * @return boolean
+     */
+    isRegExp(value) {
+        return Object.prototype.toString.call(value) === '[object RegExp]';
+    }
+
+    /**
+     * Builds the RegExp of a $regex condition
+     * @param string|RegExp pattern
+     * @param string options i (case insensitive), m (multiline), s (dot matches new lines)
+     * @return RegExp
+     */
+    toRegExp(pattern, options = '') {
+        if(typeof options !== 'string' || /[^ims]/.test(options))
+            throw new Error('The $options operator accepts only the flags i, m and s');
+
+        if(this.isRegExp(pattern))
+            return new RegExp(pattern.source, [...new Set((pattern.flags + options).replace(/[gy]/g, ''))].join(''));
+
+        if(typeof pattern !== 'string')
+            throw new Error('The $regex operator must be a string or a RegExp');
+
+        return new RegExp(pattern, options);
+    }
+
+    /**
+     * Strings match when the pattern finds them, arrays when one of their strings does
+     * @param mixed value
+     * @param RegExp regex
+     * @return boolean
+     */
+    matchesRegex(value, regex) {
+        const test = item => typeof item === 'string' && (regex.lastIndex = 0, regex.test(item));
+        return Array.isArray(value) ? value.some(test) : test(value);
+    }
+
+    /**
      * Whether a condition is an object made of operators, like {$gt: 5}
      * @param mixed condition
      * @return boolean
@@ -126,6 +181,16 @@ class operators {
 
         const keys = Object.keys(condition);
         return keys.length > 0 && keys.every(key => key.startsWith('$'));
+    }
+
+    /**
+     * Exists operator: {field: {$exists: true}} matches documents that have the field (even null)
+     * @param mixed doc_value
+     * @param boolean exists
+     * @return boolean
+     */
+    get $exists() {
+        return (doc_value, exists) => (doc_value !== undefined) === !!exists;
     }
 
     /**

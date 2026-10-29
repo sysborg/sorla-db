@@ -8,9 +8,9 @@ describe('SORLA comparison operators', () => {
     it('recognizes logical and comparison operators', () => {
         for(const name of ['$and', '$or', '$not', '$nor'])
             expect(op.isLogicalOperator(name)).to.equal(true);
-        for(const name of ['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin'])
+        for(const name of ['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex'])
             expect(op.isOperator(name)).to.equal(true);
-        expect(op.isAnyOperator('$regex')).to.equal(false);
+        expect(op.isAnyOperator('$where')).to.equal(false);
         expect(op.isAnyOperator('name')).to.equal(false);
     });
 
@@ -66,6 +66,36 @@ describe('SORLA comparison operators', () => {
         expect(op.matchesCondition(5, { $gt: 1, $lt: 4 })).to.equal(false);
         expect(op.matchesCondition(5, { $not: { $gt: 10 } })).to.equal(true);
         expect(op.matchesCondition({ a: 1 }, { a: 1 }), 'objects are not deep compared').to.equal(false);
+    });
+
+    it('$exists tells missing fields apart from null ones', () => {
+        expect(op.$exists(undefined, true)).to.equal(false);
+        expect(op.$exists(null, true)).to.equal(true);
+        expect(op.$exists(0, true)).to.equal(true);
+        expect(op.$exists(undefined, false)).to.equal(true);
+        expect(op.$exists('a', false)).to.equal(false);
+    });
+
+    it('$regex matches strings and arrays of strings, with options', () => {
+        expect(op.matchesCondition('Ana', { $regex: '^an', $options: 'i' })).to.equal(true);
+        expect(op.matchesCondition('Ana', { $regex: '^an' })).to.equal(false);
+        expect(op.matchesCondition('Ana', /^AN/i)).to.equal(true);
+        expect(op.matchesCondition(['x', 'Admin'], { $regex: 'adm', $options: 'i' })).to.equal(true);
+        expect(op.matchesCondition(42, { $regex: '4' }), 'only strings match').to.equal(false);
+        expect(op.matchesCondition(undefined, { $regex: '.*' })).to.equal(false);
+        expect(op.matchesCondition('a\nb', { $regex: 'a.b', $options: 's' })).to.equal(true);
+        expect(op.matchesCondition('Ana', { $not: { $regex: 'z' } })).to.equal(true);
+    });
+
+    it('a global RegExp gives the same answer on every call', () => {
+        const regex = /a/g;
+        expect([1, 2, 3].map(() => op.matchesCondition('banana', regex))).to.deep.equal([true, true, true]);
+    });
+
+    it('rejects invalid $regex usage', () => {
+        expect(() => op.matchesCondition('a', { $options: 'i' })).to.throw('must be used with $regex');
+        expect(() => op.matchesCondition('a', { $regex: 'a', $options: 'g' })).to.throw('flags i, m and s');
+        expect(() => op.matchesCondition('a', { $regex: 5 })).to.throw('string or a RegExp');
     });
 
     it('isOperatorObject only accepts non empty objects made of operators', () => {

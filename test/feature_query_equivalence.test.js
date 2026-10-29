@@ -42,14 +42,26 @@ const compare = {
     $lt: (v, q) => !Array.isArray(q) && v < q,
     $lte: (v, q) => !Array.isArray(q) && v <= q,
     $in: (v, q) => Array.isArray(v) ? v.some(item => q.includes(item)) : q.includes(v),
-    $nin: (v, q) => !(Array.isArray(v) ? v.some(item => q.includes(item)) : q.includes(v))
+    $nin: (v, q) => !(Array.isArray(v) ? v.some(item => q.includes(item)) : q.includes(v)),
+    $exists: (v, q) => (v !== undefined) === q
 };
+
+function refRegex(value, pattern, options) {
+    const regex = new RegExp(pattern, options);
+    const test = item => typeof item === 'string' && regex.test(item);
+    return Array.isArray(value) ? value.some(test) : test(value);
+}
 
 function refCondition(value, condition) {
     const isOps = condition !== null && typeof condition === 'object' && !Array.isArray(condition)
         && Object.keys(condition).length > 0 && Object.keys(condition).every(k => k.startsWith('$'));
     if(!isOps) return value === condition;
-    return Object.entries(condition).every(([op, arg]) => op === '$not' ? !refCondition(value, arg) : compare[op](value, arg));
+    return Object.entries(condition).every(([op, arg]) => {
+        if(op === '$not') return !refCondition(value, arg);
+        if(op === '$options') return true;
+        if(op === '$regex') return refRegex(value, arg, condition.$options);
+        return compare[op](value, arg);
+    });
 }
 
 function refMatch(doc, query) {
@@ -81,8 +93,13 @@ function randomQueryGenerator(random) {
         const ops = {};
         const count = 1 + Math.floor(random() * 2);
         for(let i = 0; i < count; i++) {
-            const op = pick(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin']);
-            ops[op] = op === '$in' || op === '$nin' ? [value(), value()] : value();
+            const op = pick(['$eq', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$exists', '$regex']);
+            if(op === '$exists') ops.$exists = random() > 0.5;
+            else if(op === '$regex') {
+                ops.$regex = pick(['^a', 'n', 'o$', '^[b-d]', 'e', 'dm']);
+                if(random() > 0.5) ops.$options = 'i';
+            }
+            else ops[op] = op === '$in' || op === '$nin' ? [value(), value()] : value();
         }
         return roll > 0.85 ? { $not: ops } : ops;
     }
@@ -135,7 +152,11 @@ describe('SORLA find() matches the reference query semantics', () => {
         { $and: [{ age: { $gte: 30 } }, { $or: [{ name: 'Ana' }, { city: { $in: ['A', 'B'] } }] }] },
         { $nor: [{ active: true }, { score: { $lt: 50 } }] },
         { score: { $not: { $gte: 20, $lte: 80 } } },
-        { $or: [{ $and: [{ city: 'C' }, { $nor: [{ age: { $lt: 30 } }] }] }, { tags: { $in: ['admin'] }, active: false }] }
+        { $or: [{ $and: [{ city: 'C' }, { $nor: [{ age: { $lt: 30 } }] }] }, { tags: { $in: ['admin'] }, active: false }] },
+        { name: { $regex: '^[a-c]', $options: 'i' } },
+        { tags: { $regex: 'o' } },
+        { age: { $exists: false } },
+        { $or: [{ nickname: { $exists: true } }, { name: { $not: { $regex: 'a' } } }] }
     ];
 
     handWritten.forEach((query, i) => {
