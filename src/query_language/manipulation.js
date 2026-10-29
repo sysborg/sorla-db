@@ -1,8 +1,11 @@
 const documents = require('../documents/document.js');
 const operatorsCheck = require('./operators.js');
+const emitter = require('../events.js');
+const { applyUpdate } = require('./update.js');
 
-class manipulation {
+class manipulation extends emitter {
     constructor(validationSchema = null) {
+        super();
         this.validationSchema = validationSchema;
         this._index = {};
         this._prohibitedCharacters = ['$', '.'];
@@ -125,6 +128,22 @@ class manipulation {
     **/
     insertOne(document, callback) 
     {
+        const id = this._insertDocument(document);
+        this._emitChange('insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+
+        if(typeof callback === 'function')
+            callback(id);
+
+        return id;
+    }
+
+    /**
+     * Validates and stores one document, without events
+     * @param object document
+     * @return mixed the _id
+     */
+    _insertDocument(document)
+    {
         if(!this._isDocument(document))
             throw new Error('Invalid document type');
 
@@ -148,10 +167,6 @@ class manipulation {
 
         this._documents.push(new documents(data));
         this._ids().add(data._id);
-
-        if(typeof callback === 'function')
-            callback(data._id);
-
         return data._id;
     }
 
@@ -183,12 +198,231 @@ class manipulation {
             given.add(document._id);
         }
 
-        const ids = documents.map(document => this.insertOne(document));
+        const start = this._documents.length;
+        const ids = documents.map(document => this._insertDocument(document));
+        this._emitChange('insert', { ids, documents: this._documents.slice(start).map(doc => this._copy(doc._data)) });
 
         if(typeof callback === 'function')
             callback(ids);
 
         return ids;
+    }
+
+    /**
+     * Helpers the update operators need
+     * @return object
+     */
+    _updateHelpers()
+    {
+        return {
+            copy: value => this._copy(value),
+            validateKeys: value => this._validateKeys(value),
+            operators: this._operators
+        };
+    }
+
+    /**
+     * Document for an upsert: the equality conditions of the filter, then the update
+     * @param object filter
+     * @return object
+     */
+    _upsertBase(filter)
+    {
+        const base = {};
+        for(const [key, value] of Object.entries(filter))
+        {
+            // only top level equality conditions describe the new document
+            if(key.startsWith('$') || key.includes('.') || this._operators.isRegExp(value))
+                continue;
+
+            if(this._operators.isOperatorObject(value))
+            {
+                if('$eq' in value)
+                    base[key] = value.$eq;
+
+                continue;
+            }
+
+            base[key] = value;
+        }
+        return base;
+    }
+
+    /**
+     * Applies an update to the matching documents
+     * @param object filter
+     * @param object update
+     * @param object options {upsert}
+     * @param boolean many
+     * @return object {matchedCount, modifiedCount, upsertedId}
+     */
+    _update(filter, update, options, many)
+    {
+        this._requireFilter(filter);
+        const helpers = this._updateHelpers();
+        const changes = [];
+
+        // compute every new version first: one invalid update leaves all documents untouched
+        for(let i = 0; i < this._documents.length; i++)
+        {
+            const doc = this._documents[i];
+            if(!this._operators.matches(doc, filter))
+                continue;
+
+            changes.push({ index: i, previous: doc._data, next: applyUpdate(doc._data, update, helpers) });
+            if(!many) break;
+        }
+
+        if(!changes.length && options.upsert)
+        {
+            const data = applyUpdate(this._upsertBase(filter), update, helpers);
+            const id = this._insertDocument(data);
+            this._emitChange('insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+            return { matchedCount: 0, modifiedCount: 0, upsertedId: id };
+        }
+
+        const modified = changes.filter(change => JSON.stringify(change.previous) !== JSON.stringify(change.next));
+        for(const change of modified)
+            this._documents[change.index] = new documents(change.next);
+
+        if(modified.length)
+        {
+            this._emitChange('update', {
+                ids: modified.map(change => change.next._id),
+                documents: modified.map(change => this._copy(change.next)),
+                previous: modified.map(change => this._copy(change.previous))
+            });
+        }
+
+        return { matchedCount: changes.length, modifiedCount: modified.length, upsertedId: null };
+    }
+
+    /**
+     * Updates the first matching document: updateOne({name: 'Ana'}, {$set: {age: 30}, $inc: {visits: 1}})
+     * Operators: $set, $unset, $inc, $push (with $each), $pull. The _id cannot change.
+     * @param object filter
+     * @param object update
+     * @param object options {upsert: insert when nothing matches}
+     * @return object {matchedCount, modifiedCount, upsertedId}
+     */
+    updateOne(filter, update, options = {})
+    {
+        return this._update(filter, update, options, false);
+    }
+
+    /**
+     * Updates every matching document, see updateOne()
+     * @param object filter
+     * @param object update
+     * @param object options {upsert}
+     * @return object {matchedCount, modifiedCount, upsertedId}
+     */
+    updateMany(filter, update, options = {})
+    {
+        return this._update(filter, update, options, true);
+    }
+
+    /**
+     * Replaces the first matching document, keeping its _id
+     * @param object filter
+     * @param object replacement a document without update operators
+     * @param object options {upsert}
+     * @return object {matchedCount, modifiedCount, upsertedId}
+     */
+    replaceOne(filter, replacement, options = {})
+    {
+        this._requireFilter(filter);
+        if(!this._isDocument(replacement))
+            throw new Error('The replacement must be a document');
+
+        if(Object.keys(replacement).some(key => key.startsWith('$')))
+            throw new Error('The replacement cannot contain update operators, use updateOne()');
+
+        if(!this._validateKeys(replacement))
+            throw new Error('Invalid document keys');
+
+        const index = this._documents.findIndex(doc => this._operators.matches(doc, filter));
+        if(index === -1)
+        {
+            if(!options.upsert)
+                return { matchedCount: 0, modifiedCount: 0, upsertedId: null };
+
+            const id = this._insertDocument(replacement);
+            this._emitChange('insert', { ids: [id], documents: [this._copy(this._documents.at(-1)._data)] });
+            return { matchedCount: 0, modifiedCount: 0, upsertedId: id };
+        }
+
+        const previous = this._documents[index]._data;
+        if(typeof replacement._id !== 'undefined' && replacement._id !== previous._id)
+            throw new Error('The _id field cannot be changed');
+
+        const next = { ...this._copy(replacement), _id: previous._id };
+        const modified = JSON.stringify(previous) !== JSON.stringify(next);
+        if(modified)
+        {
+            this._documents[index] = new documents(next);
+            this._emitChange('replace', { ids: [next._id], documents: [this._copy(next)], previous: [this._copy(previous)] });
+        }
+
+        return { matchedCount: 1, modifiedCount: modified ? 1 : 0, upsertedId: null };
+    }
+
+    /**
+     * Removes matching documents, keeping the documents array in place
+     * @param object filter
+     * @param boolean many
+     * @return object {deletedCount}
+     */
+    _delete(filter, many)
+    {
+        this._requireFilter(filter);
+        const removed = [];
+        let write = 0;
+        for(let read = 0; read < this._documents.length; read++)
+        {
+            const doc = this._documents[read];
+            if((many || !removed.length) && this._operators.matches(doc, filter))
+                removed.push(doc._data);
+            else
+                this._documents[write++] = doc;
+        }
+        this._documents.length = write;
+
+        if(removed.length)
+        {
+            for(const data of removed)
+                this._idSet?.delete(data._id);
+
+            this._emitChange('delete', { ids: removed.map(data => data._id), documents: removed });
+        }
+
+        return { deletedCount: removed.length };
+    }
+
+    /**
+     * Deletes the first matching document
+     * @param object filter
+     * @return object {deletedCount}
+     */
+    deleteOne(filter)
+    {
+        return this._delete(filter, false);
+    }
+
+    /**
+     * Deletes every matching document; deleteMany({}) empties the collection
+     * @param object filter
+     * @return object {deletedCount}
+     */
+    deleteMany(filter)
+    {
+        return this._delete(filter, true);
+    }
+
+    _requireFilter(filter)
+    {
+        if(!this._isDocument(filter))
+            throw new Error('The filter must be a query object, use {} to match every document');
     }
 
     //create index

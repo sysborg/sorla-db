@@ -14,9 +14,13 @@ class query extends manipulation
      * Count documents
      * @return int
      */
-    count()
+    count(query)
     {
-        return this._documents.length;
+        if(typeof query === 'undefined')
+            return this._documents.length;
+
+        // counts without copying the documents
+        return this._documents.reduce((total, doc) => total + (this._operators.matches(doc, query) ? 1 : 0), 0);
     }
 
     /**
