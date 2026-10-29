@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased]
+## [1.4.0] - 2026-10-29
 
 ### Added
 - Schema validation with a subset of JSON Schema: `type` (plus `date`), `required`, `properties`, `additionalProperties`, `enum`, `const`, numeric ranges, `minLength` / `maxLength` / `pattern` / `format` (email, date, date-time, uri), `items` / `minItems` / `maxItems` / `uniqueItems`, and `default`. Function schemas are supported too.
