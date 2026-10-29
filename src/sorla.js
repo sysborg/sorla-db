@@ -1,5 +1,7 @@
 const database = require('./dbs/database.js');
 const { ValidationError } = require('./schema/schema.js');
+const { connect } = require('./sync/socket.js');
+const { readEventStream } = require('./sync/sse.js');
 
 class sorla{
     /**
@@ -146,6 +148,10 @@ class sorla{
 
 // thrown when a document does not satisfy the collection schema: error.errors = [{path, rule, message}]
 sorla.ValidationError = ValidationError;
+// WebSocket connection not tied to a collection (request / load replies only): sorla.connect(url, options)
+sorla.connect = (url, options = {}) => connect(null, url, options);
+// text/event-stream parser, for your own SSE handling
+sorla.readEventStream = readEventStream;
 
 module.exports = sorla;
 if(typeof window !== 'undefined')

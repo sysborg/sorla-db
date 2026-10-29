@@ -1,6 +1,8 @@
 const query = require('../query_language/query.js');
 const { bindForm } = require('../form/form.js');
 const { clone } = require('../clone.js');
+const { stream } = require('../sync/sse.js');
+const { connect } = require('../sync/socket.js');
 
 class collection extends query
 {
@@ -57,6 +59,28 @@ class collection extends query
         return bindForm(this, form, options);
     }
 
+    /**
+     * Loads rows sent in blocks by a Server-Sent Events endpoint (see src/sync/sse.js for the events)
+     * @param string url
+     * @param object options {transport: 'fetch'|'eventsource', headers, method, body, mode, retry, maxRetries, onProgress, onError}
+     * @return object controller {done, state, close()}
+     */
+    stream(url, options = {})
+    {
+        return stream(this, url, options);
+    }
+
+    /**
+     * Opens a WebSocket to a backend: load() pages and request() replies, pushed changes applied
+     * to the collection (see src/sync/socket.js for the messages)
+     * @param string url
+     * @param object options {apply, mode, reconnect, retry, heartbeat, timeout, WebSocket}
+     * @return remote
+     */
+    connect(url, options = {})
+    {
+        return connect(this, url, options);
+    }
 }
 
 module.exports =  collection;
