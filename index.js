@@ -30,8 +30,10 @@ function buildForBrowser(entryFile, outputFile) {
     const b = browserify();
     b.add(entryFile);
     b.bundle(async (err, buf) => {
+        // a failed build must fail the command, otherwise an old dist file silently stays in place
         if (err) {
-            console.error(err);
+            console.error(err.message);
+            process.exitCode = 1;
             return;
         }
 
@@ -47,13 +49,15 @@ function buildForBrowser(entryFile, outputFile) {
 
             if (minified.error) {
                 console.error(minified.error);
+                process.exitCode = 1;
                 return;
             }
 
-            fs.outputFileSync(outputFile, code);
             fs.outputFileSync(outputFile, minified.code);
+            console.log(`${outputFile}: ${(minified.code.length / 1024).toFixed(1)} kB`);
         } catch (minifyErr) {
             console.error(minifyErr);
+            process.exitCode = 1;
         }
     });
 }

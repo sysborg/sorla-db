@@ -26,6 +26,14 @@ describe('SORLA package', () => {
         const window = {};
         new Function('window', bundle)(window);
         expect(window.sorla).to.be.a('function');
+        // a stale dist (a build that failed silently) would miss the newest API
+        const srla = new window.sorla();
+        srla.useDb('bundle');
+        srla.db.createCollection('c', { required: ['a'] });
+        for(const method of ['bindForm', 'validate', 'updateOne', 'deleteMany', 'on', 'applyDefaults'])
+            expect(srla.db.c[method], method).to.be.a('function');
+        expect(window.sorla.ValidationError).to.be.a('function');
+        expect(srla.db.getStats).to.be.a('function');
     });
 
     it('ships type declarations and only the library files', () => {
