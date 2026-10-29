@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased]
+## [1.5.0] - 2026-10-29
 
 ### Added
 - `collection.bindForm(form, options)`: binds an HTML form to the collection (insert or update mode, values converted with the schema, errors next to each field, validation as fields are left, `generate: true` to build the fields from the schema, `sorla:saved` / `sorla:invalid` events, a controller with `values`, `fill`, `validate`, `submit`, `load`, `reset`, `destroy`).
