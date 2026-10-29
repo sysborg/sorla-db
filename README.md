@@ -222,6 +222,52 @@ when the schema is set, so a typo like `tpye` is not silently ignored.
 
 A function also works as a schema: `doc => doc.total >= 0 || 'total must not be negative'`.
 
+## Forms
+
+`bindForm` connects an HTML form to a collection. Fields map to document fields by their `name`
+(`address.zip` for nested ones), values are converted with the schema, errors appear next to each field,
+and submitting inserts or updates the document.
+
+```html
+<form id="user">
+  <input name="name">
+  <input name="email" type="email">
+  <input name="age" type="number">
+  <input name="address.zip">
+  <button>Save</button>
+</form>
+```
+```
+const form = sorla.db.users.bindForm('#user', {
+  onSuccess: result => console.log(result.mode, result.id),
+  onError: errors => console.log(errors)
+});
+
+// edit an existing document: only the form fields are written ($set / $unset)
+sorla.db.users.bindForm('#user', { mode: 'update', id: 'u1' });
+
+// no markup: build the fields from the schema
+sorla.db.users.bindForm('#signup', { generate: true });
+```
+
+| Option | Default | |
+|---|---|---|
+| `mode` | `'insert'` | `'update'` loads `id` and saves the changed fields only |
+| `id` | | document to edit |
+| `generate` | `false` | build labeled fields from the JSON schema (types, enum selects, checkbox groups, nested fieldsets, limits, hints) |
+| `validateOn` | `'blur'` | `'input'` or `'submit'`; before submit only fields the user already left are reported |
+| `resetOnInsert` | `true` | clear the form after an insert |
+| `nativeValidation` | `false` | keep the browser bubbles (by default the form gets `novalidate`) |
+| `messages` | | `issue => 'translated text'` |
+| `onSuccess` / `onError` | | callbacks; the form also dispatches `sorla:saved` and `sorla:invalid` |
+
+Errors set `aria-invalid` and `aria-describedby` on the field and fill a `[data-error-for="field"]`
+element (yours, or a `<small class="sorla-error">` created after the field). Errors that are not about a
+field go to `[data-error-for=""]` at the top of the form, with `role="alert"`.
+
+The returned controller has `values()`, `fill(doc)`, `validate()`, `submit()`, `load(id)`, `reset()`
+and `destroy()`. See `example/form_example.html`.
+
 ## Find Operators
 
 ### $and

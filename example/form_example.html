@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>sorla-db forms</title>
+    <style>
+        body { font: 15px/1.5 system-ui, sans-serif; max-width: 960px; margin: 24px auto; padding: 0 16px; color: #1f2933; }
+        .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        form { display: grid; gap: 10px; padding: 16px; border: 1px solid #d9e0e8; border-radius: 8px; }
+        .sorla-field { display: grid; gap: 2px; }
+        .sorla-field:has(input[type="checkbox"]) { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+        fieldset { border: 1px solid #d9e0e8; border-radius: 6px; display: grid; gap: 8px; }
+        input, select, textarea, button { font: inherit; padding: 6px 8px; border: 1px solid #b9c3cf; border-radius: 4px; }
+        [aria-invalid="true"] { border-color: #c62828; }
+        .sorla-error, .sorla-form-errors { color: #c62828; font-size: 13px; }
+        .sorla-hint { color: #616e7c; font-size: 12px; }
+        .sorla-required { color: #c62828; }
+        button { cursor: pointer; background: #1a73e8; border-color: #1a73e8; color: #fff; }
+        table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        td, th { border-bottom: 1px solid #e4e7eb; padding: 4px 6px; text-align: left; }
+        pre { background: #f5f7fa; padding: 8px; border-radius: 6px; font-size: 12px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>sorla-db forms</h1>
+    <p>The left form is generated from the collection schema; the right one is plain HTML editing the selected user. Try invalid values: errors appear next to each field, and nothing is saved until the document satisfies the schema.</p>
+    <div class="columns">
+        <section>
+            <h2>New user (generate: true)</h2>
+            <form id="signup"><button>Create</button></form>
+        </section>
+        <section>
+            <h2>Edit user</h2>
+            <form id="edit">
+                <label>Name <input name="name"></label>
+                <label>Email <input name="email" type="email"></label>
+                <label>Age <input name="age" type="number"></label>
+                <label>Role <select name="role"><option>user</option><option>admin</option></select></label>
+                <label>Zip <input name="address.zip" placeholder="00000-000"></label>
+                <button>Save</button>
+            </form>
+        </section>
+    </div>
+    <h2>Users</h2>
+    <table><thead><tr><th>name</th><th>email</th><th>age</th><th>role</th><th>zip</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <h2>Change events</h2>
+    <pre id="log"></pre>
+
+    <script src="../dist/sorla.min.js"></script>
+    <script>
+        const db = new sorla();
+        db.useDb('demo');
+        db.db.createCollection('users', {
+            required: ['name', 'email'],
+            additionalProperties: false,
+            properties: {
+                name: { type: 'string', minLength: 2, maxLength: 60, title: 'Full name' },
+                email: { type: 'string', format: 'email', description: 'Used to sign in' },
+                age: { type: ['integer', 'null'], minimum: 0, maximum: 130 },
+                role: { enum: ['user', 'admin'], default: 'user' },
+                newsletter: { type: 'boolean', default: false },
+                skills: { type: 'array', items: { enum: ['js', 'php', 'sql'] } },
+                address: { type: 'object', properties: { zip: { type: 'string', pattern: '^\\d{5}-\\d{3}$' } } }
+            }
+        });
+        const users = db.db.users;
+        users.insertOne({ name: 'Ana Souza', email: 'ana@mail.com', age: 30, address: { zip: '14000-000' } });
+
+        users.bindForm('#signup', { generate: true });
+        let edit = null;
+
+        function render() {
+            const rows = users.find({}).sort({ name: 1 }).toArray();
+            document.querySelector('#rows').replaceChildren(...rows.map(user => {
+                const tr = document.createElement('tr');
+                for (const value of [user.name, user.email, user.age ?? '', user.role, user.address?.zip ?? '']) {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.append(td);
+                }
+                const td = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = 'Edit';
+                button.addEventListener('click', () => {
+                    edit ??= users.bindForm('#edit', { mode: 'update', id: user._id });
+                    edit.load(user._id);
+                });
+                td.append(button);
+                tr.append(td);
+                return tr;
+            }));
+        }
+
+        users.on('change', event => {
+            document.querySelector('#log').textContent = `${event.type} ${JSON.stringify(event.ids)}\n` + document.querySelector('#log').textContent;
+            render();
+        });
+        render();
+    </script>
+</body>
+</html>
