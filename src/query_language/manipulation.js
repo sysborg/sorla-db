@@ -248,8 +248,11 @@ class manipulation extends emitter {
      */
     _store(data)
     {
+        // take the id set before pushing: _ids() rebuilds it when its size differs from the documents,
+        // so pushing first rebuilt the whole set on every insert (quadratic inserts)
+        const ids = this._ids();
         this._documents.push(new documents(data));
-        this._ids().add(data._id);
+        ids.add(data._id);
         return data._id;
     }
 
