@@ -58,5 +58,5 @@ function buildForBrowser(entryFile, outputFile) {
     });
 }
 
-const allJsFiles = findJsFiles(srcDir);
-buildForBrowser(allJsFiles, outputFile);
+// only the library entry: bundling every file in src/ also pulled src/helper.js and faker (1.6 MB)
+buildForBrowser([path.join(srcDir, 'sorla.js')], outputFile);

@@ -2,10 +2,31 @@
   "name": "sorla-db",
   "version": "1.1.0",
   "description": "A simple and temporary database focused to use in browser environment that will bring capabilities for other tools that will be launched as soon as possible.",
-  "main": "dist/sorla.min.js",
+  "main": "src/sorla.js",
+  "module": "index.mjs",
+  "types": "index.d.ts",
+  "unpkg": "dist/sorla.min.js",
+  "jsdelivr": "dist/sorla.min.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./src/sorla.js"
+    },
+    "./dist/sorla.min.js": "./dist/sorla.min.js",
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "!src/helper.js",
+    "dist",
+    "index.mjs",
+    "index.d.ts"
+  ],
   "scripts": {
+    "build": "node index.js",
     "mini": "node index.js",
-    "build": "webpack",
     "test": "jest"
   },
   "repository": {
