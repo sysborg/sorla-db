@@ -1,5 +1,11 @@
 # sorla-db
-A simple and temporary database focused to use in browser environment that will bring capabilities for other tools that will be launched as soon as possible.
+
+A document database for the browser and Node: MongoDB queries, schema validation, change events,
+live queries for React / Vue / Svelte / Angular, form binding, and loading from a backend over
+Server-Sent Events or WebSocket. No server, no dependencies, 54 kB.
+
+📖 **Documentation:** [English](docs/README.md) · [Português (Brasil)](docs/README.md#português-brasil):
+getting started, every command, the test suites, console recipes and a cookbook.
 
 This idea is from our founder #andmarruda that give this idea and alot of this idea are developed by him.
 
@@ -17,7 +23,7 @@ import sorla from 'sorla-db';
 ```
 
 ```html
-<!-- browser, 9.5 kB: registers window.sorla -->
+<!-- browser, 54 kB: registers window.sorla -->
 <script src="https://cdn.jsdelivr.net/npm/sorla-db@1/dist/sorla.min.js"></script>
 ```
 
