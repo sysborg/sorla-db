@@ -16,11 +16,7 @@ describe('SORLA inserting documents', () => {
     beforeAll(() => {
         srla = new sorla();
         srla.useDb('inserts');
-        // insertMany logs the count of invalid documents on every call
-        jest.spyOn(console, 'info').mockImplementation(() => {});
     });
-
-    afterAll(() => jest.restoreAllMocks());
 
     it('generates a uuid v4 _id when the document has none', () => {
         const collection = fresh();
@@ -70,8 +66,11 @@ describe('SORLA inserting documents', () => {
         const collection = fresh();
         expect(() => collection.insertOne('text')).to.throw('Invalid document type');
         expect(() => collection.insertOne(['a'])).to.throw('Invalid document type');
-        expect(() => collection.insertMany('text')).to.throw();
+        expect(() => collection.insertOne(null)).to.throw('Invalid document type');
+        expect(() => collection.insertMany('text')).to.throw('Documents must be an array of objects');
         expect(() => collection.insertMany([{ a: 1 }, 'b'])).to.throw('Documents must be an array of objects');
+        expect(() => collection.insertMany([{ a: 1 }, null])).to.throw('Documents must be an array of objects');
+        expect(collection.count()).to.equal(0);
     });
 
     it('rejects keys with $ or .', () => {
@@ -83,34 +82,61 @@ describe('SORLA inserting documents', () => {
         expect(collection.count()).to.equal(0);
     });
 
-    // ---- known bugs: these document current behavior and will start failing once fixed
-
-    it.failing('accepts null values (Object.keys(null) in _validateKeys)', () => {
+    it('accepts null values, also nested and inside arrays', () => {
         const collection = fresh();
-        collection.insertOne({ name: 'Ana', nickname: null });
+        collection.insertOne({ name: 'Ana', nickname: null, address: { zip: null }, list: [null, { a: null }] });
         expect(collection.first.nickname).to.equal(null);
+        expect(collection.first.address.zip).to.equal(null);
+        expect(collection.findOne({ nickname: null }).name).to.equal('Ana');
     });
 
-    it.failing('validates every nested object, not only the first one', () => {
+    it('validates every nested object, not only the first one', () => {
         const collection = fresh();
         expect(() => collection.insertOne({ first: { ok: 1 }, second: { 'a.b': 1 } })).to.throw('Invalid document keys');
+        expect(() => collection.insertOne({ list: [{ ok: 1 }, { 'a$b': 1 }] })).to.throw('Invalid document keys');
+        expect(() => collection.insertOne({ deep: { deeper: [{ ok: { 'x.y': 1 } }] } })).to.throw('Invalid document keys');
     });
 
-    it.failing('rejects a duplicated _id', () => {
+    it('rejects a duplicated _id', () => {
         const collection = fresh();
         collection.insertOne({ _id: 'same' });
-        expect(() => collection.insertOne({ _id: 'same' })).to.throw();
+        expect(() => collection.insertOne({ _id: 'same' })).to.throw('Duplicate _id "same"');
+        expect(collection.count()).to.equal(1);
     });
 
-    it.failing('insertMany explains why a non array is rejected (it calls reduce before validating)', () => {
+    it('does not mutate the inserted object and returns the new _id', () => {
         const collection = fresh();
-        expect(() => collection.insertMany('text')).to.throw('Documents must be an array of objects');
+        const input = { name: 'Ana', nested: { a: 1 } };
+        const id = collection.insertOne(input);
+        expect(input).to.deep.equal({ name: 'Ana', nested: { a: 1 } });
+        expect(id).to.match(UUID_V4);
+        input.nested.a = 2;
+        expect(collection.findOne({ _id: id }).nested.a).to.equal(1);
     });
 
-    it.failing('does not mutate the inserted object', () => {
+    it('insertMany returns the ids and inserts nothing when one document is invalid', () => {
         const collection = fresh();
-        const input = { name: 'Ana' };
-        collection.insertOne(input);
-        expect(input).to.not.have.property('_id');
+        const ids = collection.insertMany([{ n: 1 }, { _id: 'b', n: 2 }]);
+        expect(ids.length).to.equal(2);
+        expect(ids[1]).to.equal('b');
+        expect(() => collection.insertMany([{ n: 3 }, { 'bad.key': 4 }])).to.throw('Invalid document keys');
+        expect(() => collection.insertMany([{ _id: 'x' }, { _id: 'x' }])).to.throw('Duplicate _id "x"');
+        expect(() => collection.insertMany([{ n: 5 }, { _id: 'b' }])).to.throw('Duplicate _id "b"');
+        expect(collection.count()).to.equal(2);
+    });
+
+    it('callbacks receive the inserted ids', () => {
+        const collection = fresh();
+        let one = null;
+        let many = null;
+        collection.insertOne({ _id: 'one' }, id => { one = id; });
+        collection.insertMany([{ _id: 'two' }], ids => { many = ids; });
+        expect(one).to.equal('one');
+        expect(many).to.deep.equal(['two']);
+    });
+
+    it('rejects values that cannot be copied', () => {
+        const collection = fresh();
+        expect(() => collection.insertOne({ fn: () => 1 })).to.throw('cloneable values');
     });
 });

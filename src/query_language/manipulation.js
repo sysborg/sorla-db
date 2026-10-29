@@ -52,47 +52,36 @@ class manipulation {
     }
 
     /**
-     * Verify if exists some document that is not object
-     * @param array documents
+     * Whether a value is a document: an object that is not null nor an array
+     * @param mixed value
      * @return boolean
      */
-    _validateDocumentsType(documents)
+    _isDocument(value)
     {
-        const count = documents.reduce((acc, doc) => {
-            return typeof doc !== 'object' ? ++acc : acc;
-        }, 0);
-
-        return count;
+        return value !== null && typeof value === 'object' && !Array.isArray(value);
     }
 
     /**
-     * Verify if keys has prohibited characters
+     * Verify that no key, at any depth, has prohibited characters
      * @param object document
      * @return boolean
      */
     _validateKeys(document)
     {
-        const keys = Object.keys(document);
         const operators = new operatorsCheck();
-        for(let key of keys)
+        for(const key of Object.keys(document))
         {
-            const hasProhibitedCharacters = this._prohibitedCharacters.reduce((acc, char) => {
-                return key.indexOf(char) > -1 ? ++acc : acc;
-            }, 0);
-
-            if(hasProhibitedCharacters > 0 && !operators.isOperator(key))
+            const hasProhibitedCharacters = this._prohibitedCharacters.some(char => key.indexOf(char) > -1);
+            if(hasProhibitedCharacters && !operators.isOperator(key))
                 return false;
 
-            if(typeof document[key] === 'object')
-                return this._validateKeys(document[key]);
-
-            if(Array.isArray(document[key]))
+            const value = document[key];
+            const nested = Array.isArray(value) ? value : [value];
+            for(const item of nested)
             {
-                for(let value of document[key])
-                {
-                    if(typeof value === 'object')
-                        return this._validateKeys(value);
-                }
+                // null is a valid value, only objects have keys to check
+                if(item !== null && typeof item === 'object' && !this._validateKeys(item))
+                    return false;
             }
         }
 
@@ -100,58 +89,106 @@ class manipulation {
     }
 
     /**
+     * Set of the _id values of the collection. It is rebuilt when its size no longer matches the
+     * documents, so removals done directly on the documents array are handled too.
+     * @return Set
+     */
+    _ids()
+    {
+        if(!this._idSet || this._idSet.size !== this._documents.length)
+            this._idSet = new Set(this._documents.map(doc => doc._data._id));
+
+        return this._idSet;
+    }
+
+    /**
+     * Copies a document, so the object given by the caller is never changed
+     * @param object document
+     * @return object
+     */
+    _copy(document)
+    {
+        try {
+            return structuredClone(document);
+        } catch(error) {
+            throw new Error('Documents can only contain cloneable values (no functions or DOM nodes)');
+        }
+    }
+
+    /**
      * Inserts one document to the collection
      * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
+     * @version 1.2.0
      * @param object document
-     * @param function callback - under construction
-     * @return void
+     * @param function callback - receives the inserted _id
+     * @return mixed the _id of the inserted document
     **/
     insertOne(document, callback) 
     {
-        if(typeof document !== 'object' || Array.isArray(document))
+        if(!this._isDocument(document))
             throw new Error('Invalid document type');
 
         if(!this._validateKeys(document))
             throw new Error('Invalid document keys');
 
-        if(typeof document._id === 'undefined')
+        const data = this._copy(document);
+        if(typeof data._id === 'undefined')
         {
-            let _idKey = '';
             do {
-                _idKey = this._generateKey();
-            } while(this._documents.find(doc => doc._id === document._id));
-
-            document._id = _idKey;
+                data._id = this._generateKey();
+            } while(this._ids().has(data._id));
+        }
+        else if(this._ids().has(data._id))
+        {
+            throw new Error(`Duplicate _id "${data._id}"`);
         }
 
-        if(!this._validate(document))
+        if(!this._validate(data))
             throw new Error('Invalid document');
 
-        this._documents.push(new documents(document));
+        this._documents.push(new documents(data));
+        this._ids().add(data._id);
 
         if(typeof callback === 'function')
-            callback();
+            callback(data._id);
+
+        return data._id;
     }
 
     /**
-     * Insert many documents
+     * Insert many documents. Every document is validated before the first one is inserted,
+     * so an invalid document never leaves the collection with only part of the batch.
      * @author Anderson Arruda < anderson@sysborg.com.br >
-     * @version 1.0.0
+     * @version 1.2.0
      * @param array documents 
-     * @param function callback 
-     * @return void
+     * @param function callback - receives the inserted ids
+     * @return array the _id of each inserted document
      */
     insertMany(documents, callback) {
-        console.info(this._validateDocumentsType(documents));
-        if(!Array.isArray(documents) || this._validateDocumentsType(documents) > 0)
+        if(!Array.isArray(documents) || !documents.every(document => this._isDocument(document)))
             throw new Error('Documents must be an array of objects');
 
-        for(let document of documents)
-            this.insertOne(document);
+        const given = new Set();
+        for(const document of documents)
+        {
+            if(!this._validateKeys(document))
+                throw new Error('Invalid document keys');
+
+            if(typeof document._id === 'undefined')
+                continue;
+
+            if(given.has(document._id) || this._ids().has(document._id))
+                throw new Error(`Duplicate _id "${document._id}"`);
+
+            given.add(document._id);
+        }
+
+        const ids = documents.map(document => this.insertOne(document));
 
         if(typeof callback === 'function')
-            callback();
+            callback(ids);
+
+        return ids;
     }
 
     //create index
