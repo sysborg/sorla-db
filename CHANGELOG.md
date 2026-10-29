@@ -3,6 +3,20 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [Unreleased]
+
+### Added
+- `updateOne` / `updateMany` with `$set`, `$unset`, `$inc`, `$push` (`$each`) and `$pull`, `"a.b"` paths and `{ upsert }`.
+- `replaceOne`, `deleteOne`, `deleteMany`, and `count(query)`.
+- Change events: `collection.on / once / off` for `insert`, `update`, `replace`, `delete` and `change`.
+- Query operators `$regex` (with `$options`, or a RegExp value) and `$exists`.
+- `cursor.skip()` and `cursor.limit()`; inclusion projection (`{ name: 1 }`).
+- `sorla.listDatabases()`, `sorla.dropDb()`, `db.listCollections()`, `db.getCollection()`, `db.dropCollection()`, `db.getStats()`.
+- Type declarations for all of the above.
+
+### Changed
+- `cursor.projection()` returns the cursor and throws on invalid projections.
+
 ## [1.2.0] - 2026-10-29
 
 ### Fixed

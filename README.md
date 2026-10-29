@@ -100,6 +100,75 @@ using the `Intl.Collator` options:
 cursor.sort({ name: 1 }, { collation: { locale: 'pt-BR', sensitivity: 'base', numeric: true } });
 ```
 
+## Paging and projection
+
+```
+collection.find({}).sort({ age: 1 }).skip(20).limit(10).toArray();
+collection.find({}, { name: 1, age: 1 });   // only name, age and _id
+collection.find({}, { name: 1, _id: 0 });   // only name
+collection.find({}, { password: 0 });       // everything except password
+```
+
+`limit(0)` means no limit. Inclusion and exclusion cannot be mixed (except `_id`), and projection
+works on top level fields.
+
+## Updating documents
+
+```
+collection.updateOne({ _id: id }, { $set: { 'address.city': 'Recife' }, $inc: { visits: 1 } });
+collection.updateMany({ active: false }, { $unset: { token: '' } });
+collection.updateOne({ email: 'a@b.c' }, { $set: { name: 'Ana' } }, { upsert: true });
+```
+
+| Operator | Effect |
+|---|---|
+| `$set` | sets fields, creating missing objects of `"a.b"` paths |
+| `$unset` | removes fields |
+| `$inc` | adds a number (missing fields start at 0) |
+| `$push` | appends to an array, `{ $push: { tags: { $each: ['a', 'b'] } } }` appends several |
+| `$pull` | removes array items equal to a value, matching a condition (`{ $in: [...] }`) or a sub document (`{ ok: false }`) |
+
+They return `{ matchedCount, modifiedCount, upsertedId }`. Updates are applied to a copy first: if an
+operator fails (for example `$inc` on a text field) no document changes. `_id` cannot change. With
+`{ upsert: true }`, a document is inserted from the equality conditions of the filter when nothing matches.
+
+`replaceOne(filter, document)` replaces the whole document and keeps its `_id`.
+
+## Deleting and counting
+
+```
+collection.deleteOne({ _id: id });         // { deletedCount: 1 }
+collection.deleteMany({ age: { $lt: 18 } });
+collection.deleteMany({});                 // empties the collection
+collection.count();                        // every document
+collection.count({ active: true });        // matching documents, without copying them
+```
+
+## Change events
+
+```
+const off = collection.on('change', event => {
+  // event.type: 'insert' | 'update' | 'replace' | 'delete'
+  // event.ids, event.documents (copies), event.previous (before update / replace)
+});
+collection.on('delete', event => console.log(event.ids));
+off();
+```
+
+`insertMany` and `updateMany` emit one event for the whole operation, and nothing is emitted when nothing
+changed. A listener that throws does not undo or interrupt the write.
+
+## Databases and collections
+
+```
+sorla.listDatabases();            // ['tags', ...]
+sorla.dropDb('tags');
+sorla.db.listCollections();       // ['updatedTags', ...]
+sorla.db.getCollection('stats');  // any collection, also when its name shadows a method
+sorla.db.dropCollection('updatedTags');
+sorla.db.getStats();              // { name, documents, collections: [{ name, documents }] }
+```
+
 ## Find Operators
 
 ### $and
@@ -195,6 +264,22 @@ A document without the queried field does not match `$eq`, `$gt`, `$in`... but d
 `$ne` and `$nin`, like MongoDB. `null` can be used as a value: `{name: null}`.
 
 Unknown operators and logical operators that do not receive an array throw an error.
+
+### $regex
+Matches strings with a regular expression. `$options` takes the flags `i` (case insensitive), `m` and `s`.
+A RegExp can be used directly as the value. Array fields match when one of their strings does.
+
+```
+const results = window.sorla.db.updatedTags.find({ name: { $regex: '^an', $options: 'i' } });
+const same = window.sorla.db.updatedTags.find({ name: /^an/i });
+```
+
+### $exists
+`{ field: { $exists: true } }` matches documents that have the field, even when it is `null`;
+`false` matches documents without it.
+
+### Arrays
+Equality is strict: `{ tags: 'dev' }` does not match `tags: ['dev']`. Use `{ tags: { $in: ['dev'] } }`.
 
 ## Comparison operators
 
