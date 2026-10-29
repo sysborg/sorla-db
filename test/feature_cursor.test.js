@@ -82,8 +82,28 @@ describe('SORLA cursor', () => {
         expect(() => people.find({}).sort({ age: 'asc' })).to.throw('must be 1 or -1');
     });
 
-    it.todo('projection with 1 keeps only the listed fields');
-    it.todo('skip() and limit()');
+    it('projection with 1 keeps only the listed fields and _id', () => {
+        expect(people.find({ name: 'Ana' }, { name: 1 }).first()).to.have.all.keys('name', '_id');
+        expect(people.find({ name: 'Ana' }, { name: 1, _id: 0 }).first()).to.deep.equal({ name: 'Ana' });
+        expect(people.find({ name: 'Ana' }, { _id: 0 }).first()).to.not.have.property('_id');
+        expect(people.findOne({ name: 'Ana' }, { age: 1 })).to.have.all.keys('age', '_id');
+    });
+
+    it('rejects invalid projections', () => {
+        expect(() => people.find({}, { name: 1, email: 0 })).to.throw('cannot mix');
+        expect(() => people.find({}, { name: true })).to.throw('must be 0 or 1');
+        expect(() => people.find({}, { 'a.b': 1 })).to.throw('top level fields only');
+    });
+
+    it('skip() and limit() page through sorted results', () => {
+        const page = (skip, limit) => people.find({}).sort({ age: 1 }).skip(skip).limit(limit).toArray().map(doc => doc.name);
+        expect(page(0, 2)).to.deep.equal(['Ana', 'Bruno']);
+        expect(page(2, 2)).to.deep.equal(['Carla']);
+        expect(page(5, 2)).to.deep.equal([]);
+        expect(page(1, 0), 'limit(0) means no limit').to.deep.equal(['Bruno', 'Carla']);
+        expect(() => people.find({}).skip(-1)).to.throw('non negative integer');
+        expect(() => people.find({}).limit(1.5)).to.throw('non negative integer');
+    });
 });
 
 describe('SORLA cursor sort order', () => {

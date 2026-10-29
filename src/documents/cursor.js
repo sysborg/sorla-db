@@ -123,23 +123,75 @@ class cursor {
     }
 
     /**
-     * Projection of the cursor
+     * Projection of the cursor, like MongoDB:
+     *   {email: 0}           every field except email
+     *   {name: 1, age: 1}    only name and age, plus _id unless {_id: 0}
+     * Inclusion and exclusion cannot be mixed, except for _id. Top level fields only.
      * @param json projection
      * @return cursor
      */
     projection(projection) {
         if(projection === null || typeof projection !== 'object')
-            return;
+            return this;
 
-        const self = this;
+        const fields = Object.keys(projection);
+        for(const field of fields)
+        {
+            if(projection[field] !== 0 && projection[field] !== 1)
+                throw new Error(`Projection of "${field}" must be 0 or 1`);
+
+            if(field.includes('.'))
+                throw new Error(`Projection supports top level fields only ("${field}")`);
+        }
+
+        const included = fields.filter(field => projection[field] === 1 && field !== '_id');
+        const excluded = fields.filter(field => projection[field] === 0 && field !== '_id');
+        if(included.length && excluded.length)
+            throw new Error('Projection cannot mix inclusion and exclusion (except for _id)');
+
+        const keep = new Set(included);
+        if(projection._id !== 0) keep.add('_id');
+
         this._data.forEach(doc => {
-            for(const attribute of Object.keys(projection))
-            {
-                if(projection[attribute] === 0) {
-                    doc.deleteProp(attribute, self);
-                }
-            }
+            const remove = included.length
+                ? Object.keys(doc._data).filter(field => !keep.has(field))
+                : [...excluded, ...(projection._id === 0 ? ['_id'] : [])];
+
+            for(const field of remove)
+                doc.deleteProp(field);
         });
+
+        return this;
+    }
+
+    /**
+     * Skips the first documents (apply after sort, like MongoDB applies it)
+     * @param int count
+     * @return cursor
+     */
+    skip(count) {
+        if(!Number.isInteger(count) || count < 0)
+            throw new Error('skip() needs a non negative integer');
+
+        this._data = this._data.slice(count);
+        this.currIndex = 0;
+        return this;
+    }
+
+    /**
+     * Keeps at most `count` documents; 0 means no limit, like MongoDB
+     * @param int count
+     * @return cursor
+     */
+    limit(count) {
+        if(!Number.isInteger(count) || count < 0)
+            throw new Error('limit() needs a non negative integer');
+
+        if(count > 0)
+            this._data = this._data.slice(0, count);
+
+        this.currIndex = 0;
+        return this;
     }
 
     /**
