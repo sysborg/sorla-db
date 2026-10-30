@@ -45,7 +45,8 @@
     "build": "node index.js",
     "mini": "node index.js",
     "test": "jest && node --test test/adapters/adapters.test.mjs",
-    "site": "node scripts/site.mjs"
+    "site": "node scripts/site.mjs",
+    "wiki": "node scripts/wiki.mjs"
   },
   "repository": {
     "type": "git",
