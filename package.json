@@ -44,7 +44,8 @@
   "scripts": {
     "build": "node index.js",
     "mini": "node index.js",
-    "test": "jest && node --test test/adapters/adapters.test.mjs"
+    "test": "jest && node --test test/adapters/adapters.test.mjs",
+    "site": "node scripts/site.mjs"
   },
   "repository": {
     "type": "git",
@@ -65,7 +66,7 @@
   "bugs": {
     "url": "https://github.com/sysborg/sorla-db/issues"
   },
-  "homepage": "https://github.com/sysborg/sorla-db#readme",
+  "homepage": "https://sysborg.github.io/sorla-db/",
   "devDependencies": {
     "@angular/core": "^19.2.14",
     "browserify": "^17.0.0",
@@ -75,6 +76,7 @@
     "jest": "^29.6.4",
     "jsdom": "^22.1.0",
     "jsdom-global": "^3.0.2",
+    "marked": "^15.0.12",
     "mocha": "^10.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -87,10 +89,10 @@
     "node": ">=18"
   },
   "peerDependencies": {
+    "@angular/core": ">=16",
     "react": ">=18",
-    "vue": ">=3.3",
     "svelte": ">=3",
-    "@angular/core": ">=16"
+    "vue": ">=3.3"
   },
   "peerDependenciesMeta": {
     "react": {
