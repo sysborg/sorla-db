@@ -24,6 +24,8 @@ test('React: useQuery re-renders on changes, keeps the query across renders, use
     const dom = new JSDOM('<div id="root"></div>');
     globalThis.window = dom.window;
     globalThis.document = dom.window.document;
+    // Node 18 and 20 have no global navigator (react-dom reads it when it loads)
+    if (typeof globalThis.navigator === 'undefined') Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     const React = await import('react');
     const { createRoot } = await import('react-dom/client');
