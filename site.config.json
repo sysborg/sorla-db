@@ -3,38 +3,103 @@
   "tagline": "A document database for the browser and Node: MongoDB queries, schema validation, live queries for React, Vue, Svelte and Angular, and loading over Server-Sent Events or WebSocket.",
   "icon": "◈",
   "site": "https://sysborg.github.io/sorla-db/",
+  "official": {
+    "label": "sorladb.dev.br",
+    "url": "https://sorladb.dev.br"
+  },
   "repo": "https://github.com/sysborg/sorla-db",
   "branch": "main",
   "install": "npm install sorla-db",
   "footer": "MIT © Anderson Arruda · Sysborg",
   "hero": {
-    "buttons": [{ "label": "Examples", "href": "example/simple_data_example.html" }]
+    "buttons": [
+      {
+        "label": "Examples",
+        "href": "example/simple_data_example.html"
+      }
+    ]
   },
   "highlights": [
-    { "title": "MongoDB queries you already know", "text": "find, $in, $regex, $or, updateOne, $set, $push, upsert, bulkWrite: shareable with your backend as plain JSON." },
-    { "title": "Safe by default", "text": "Copies in, copies out; batches validated before anything is written; stored documents never change in place." },
-    { "title": "Fast", "text": "An _id index, cursors that copy only what you read, updates that copy only what changed. 100 000 documents are comfortable." },
-    { "title": "Schema validation", "text": "A JSON Schema subset with defaults and readable errors, or a function. Every problem reported at once." },
-    { "title": "Live queries", "text": "watch() keeps a result current, and becomes a React hook, a Vue ref, a Svelte store or an Angular signal." },
-    { "title": "Server sync", "text": "Load a million rows in blocks over Server-Sent Events, or page and receive live changes over a WebSocket." },
-    { "title": "Forms in one line", "text": "bindForm turns an HTML form into an insert or edit form, with conversion and errors from the schema." },
-    { "title": "No dependencies, 54 kB", "text": "Browser bundle, CommonJS and ES modules, TypeScript types, Node 18+." },
-    { "title": "Tested", "text": "227 tests, including 500 random nested queries checked against a reference implementation." }
+    {
+      "title": "MongoDB queries you already know",
+      "text": "find, $in, $regex, $or, updateOne, $set, $push, upsert, bulkWrite: shareable with your backend as plain JSON."
+    },
+    {
+      "title": "Safe by default",
+      "text": "Copies in, copies out; batches validated before anything is written; stored documents never change in place."
+    },
+    {
+      "title": "Fast",
+      "text": "An _id index, cursors that copy only what you read, updates that copy only what changed. 100 000 documents are comfortable."
+    },
+    {
+      "title": "Schema validation",
+      "text": "A JSON Schema subset with defaults and readable errors, or a function. Every problem reported at once."
+    },
+    {
+      "title": "Live queries",
+      "text": "watch() keeps a result current, and becomes a React hook, a Vue ref, a Svelte store or an Angular signal."
+    },
+    {
+      "title": "Server sync",
+      "text": "Load a million rows in blocks over Server-Sent Events, or page and receive live changes over a WebSocket."
+    },
+    {
+      "title": "Forms in one line",
+      "text": "bindForm turns an HTML form into an insert or edit form, with conversion and errors from the schema."
+    },
+    {
+      "title": "No dependencies, 54 kB",
+      "text": "Browser bundle, CommonJS and ES modules, TypeScript types, Node 18+."
+    },
+    {
+      "title": "Tested",
+      "text": "227 tests, including 500 random nested queries checked against a reference implementation."
+    }
   ],
   "languages": [
     {
-      "code": "en", "label": "English", "docsLabel": "Documentation", "dir": "docs/en", "index": "README.md",
-      "home": "Overview", "onThisPage": "On this page", "previous": "Previous", "next": "Next", "filter": "Filter pages",
+      "code": "en",
+      "label": "English",
+      "docsLabel": "Documentation",
+      "dir": "docs/en",
+      "index": "README.md",
+      "home": "Overview",
+      "onThisPage": "On this page",
+      "previous": "Previous",
+      "next": "Next",
+      "filter": "Filter pages",
       "edit": "Edit this page on GitHub",
-      "links": [{ "label": "npm", "href": "https://www.npmjs.com/package/sorla-db" }]
+      "links": [
+        {
+          "label": "npm",
+          "href": "https://www.npmjs.com/package/sorla-db"
+        }
+      ]
     },
     {
-      "code": "pt-BR", "label": "Português (Brasil)", "docsLabel": "Documentação em português", "dir": "docs/pt-BR", "index": "README.md",
+      "code": "pt-BR",
+      "label": "Português (Brasil)",
+      "docsLabel": "Documentação em português",
+      "dir": "docs/pt-BR",
+      "index": "README.md",
       "tagline": "Um banco de documentos para o navegador e o Node: consultas do MongoDB, validação por schema, consultas vivas para React, Vue, Svelte e Angular, e carga por Server-Sent Events ou WebSocket.",
-      "home": "Visão geral", "onThisPage": "Nesta página", "previous": "Anterior", "next": "Próxima", "filter": "Filtrar páginas",
+      "home": "Visão geral",
+      "onThisPage": "Nesta página",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "filter": "Filtrar páginas",
       "edit": "Editar esta página no GitHub",
-      "links": [{ "label": "npm", "href": "https://www.npmjs.com/package/sorla-db" }]
+      "links": [
+        {
+          "label": "npm",
+          "href": "https://www.npmjs.com/package/sorla-db"
+        }
+      ]
     }
   ],
-  "copy": ["dist/sorla.min.js", "example"]
+  "copy": [
+    "dist/sorla.min.js",
+    "example"
+  ]
 }

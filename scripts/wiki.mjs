@@ -97,6 +97,7 @@ for (const lang of languages) {
 
 // Home: every language, with its table of contents
 const home = [`# ${config.title}`, '', config.tagline, ''];
+if (config.official) home.push(`🏠 **${config.official.label}:** ${config.official.url}`, '');
 if (config.site) home.push(`🌐 **Website:** ${config.site} · 📦 \`${config.install}\``, '');
 for (const lang of languages) {
     home.push(`## ${lang.label}`, '');
@@ -114,7 +115,7 @@ for (const lang of languages) {
     sidebar.push('');
 }
 writeFileSync(join(out, '_Sidebar.md'), sidebar.join('\n'));
-writeFileSync(join(out, '_Footer.md'), [config.site ? `[Website](${config.site})` : '', `[Repository](${config.repo})`, config.footer ?? ''].filter(Boolean).join(' · ') + '\n');
+writeFileSync(join(out, '_Footer.md'), [config.official ? `[${config.official.label}](${config.official.url})` : '', config.site ? `[Website](${config.site})` : '', `[Repository](${config.repo})`, config.footer ?? ''].filter(Boolean).join(' · ') + '\n');
 
 console.log(`wiki/ built: ${count + 3} pages in ${languages.length} languages`);
 

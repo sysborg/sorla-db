@@ -5,7 +5,8 @@
  *
  * Everything project specific is in site.config.json:
  *   title, tagline, repo, branch, install, highlights[], languages[{ code, label, dir, index }],
- *   copy[] (files and folders published as they are, e.g. live examples), backendPages[], hero
+ *   copy[] (files and folders published as they are, e.g. live examples), backendPages[], hero,
+ *   official { label, url } (the project's own website, when the docs are a mirror of it)
  *
  * Pages keep the anchors GitHub gives headings, so links between pages work the same on GitHub and
  * on the site. Links to other files of the repository point at GitHub, unless the file is published.
@@ -205,6 +206,7 @@ function topBar(lang, name, depth) {
 <button class="menu-toggle" type="button" aria-label="Menu">☰</button>
 <a class="brand" href="${'../'.repeat(depth)}index.html">${escape(config.title)}<small>${escape(lang.docsLabel ?? '')}</small></a>
 <nav>
+${config.official ? `<a href="${escape(config.official.url)}"><b>${escape(config.official.label)}</b></a>` : ''}
 ${(lang.links ?? []).map(link => `<a href="${link.href.startsWith('http') ? link.href : '../'.repeat(depth) + link.href}">${escape(link.label)}</a>`).join('\n')}
 <a href="${config.repo}">GitHub</a>
 <select aria-label="Language">${options}</select>
@@ -299,6 +301,7 @@ ${languages.map(lang => `<a href="${lang.code}/index.html">${escape(lang.label)}
 <span class="install">$ ${escape(config.install)}</span>
 <div class="buttons">
 ${languages.map((lang, i) => `<a class="${i === 0 ? 'primary' : ''}" href="${lang.code}/index.html">${escape(lang.docsLabel ?? lang.label)}</a>`).join('\n')}
+${config.official ? `<a href="${escape(config.official.url)}">${escape(config.official.label)}</a>` : ''}
 ${(hero.buttons ?? []).map(button => `<a href="${escape(button.href)}">${escape(button.label)}</a>`).join('\n')}
 </div>
 </section>
@@ -306,7 +309,7 @@ ${hero.image ? `<div class="shot"><img src="${escape(hero.image)}" alt="${escape
 <section class="features">
 ${(config.highlights ?? []).map(item => `<div><b>${escape(item.title)}</b><span>${escape(item.text)}</span></div>`).join('\n')}
 </section>
-<footer>${escape(config.footer ?? '')} · <a href="${config.repo}">GitHub</a></footer>
+<footer>${escape(config.footer ?? '')}${config.official ? ` · <a href="${escape(config.official.url)}">${escape(config.official.label)}</a>` : ''} · <a href="${config.repo}">GitHub</a></footer>
 <script>
 // a visitor whose browser speaks Portuguese sees the Portuguese button first
 try { const saved = localStorage.getItem('docs-lang'); const lang = saved || navigator.language;
