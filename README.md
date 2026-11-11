@@ -1,5 +1,7 @@
 # sorla-db
 
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/andmarruda/badge.svg)](https://hub.xerj.org/contributors/andmarruda)
+
 A document database for the browser and Node: MongoDB queries, schema validation, change events,
 live queries for React / Vue / Svelte / Angular, form binding, and loading from a backend over
 Server-Sent Events or WebSocket. No server, no dependencies, 54 kB.
